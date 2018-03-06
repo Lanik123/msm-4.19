@@ -2629,6 +2629,7 @@ static int _kgsl_iommu_cb_probe(struct kgsl_device *device,
 			return PTR_ERR(ctx->dev);
 	}
 
+	of_dma_configure(ctx->dev, node);
 	return 0;
 }
 
