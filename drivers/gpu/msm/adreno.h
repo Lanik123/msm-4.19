@@ -214,6 +214,7 @@ enum adreno_gpurev {
 	ADRENO_REV_A530 = 530,
 	ADRENO_REV_A540 = 540,
 	ADRENO_REV_A615 = 615,
+	ADRENO_REV_A616 = 616,
 	ADRENO_REV_A630 = 630,
 };
 
@@ -1254,6 +1255,7 @@ static inline int adreno_is_a6xx(struct adreno_device *adreno_dev)
 }
 
 ADRENO_TARGET(a615, ADRENO_REV_A615)
+ADRENO_TARGET(a616, ADRENO_REV_A616)
 ADRENO_TARGET(a630, ADRENO_REV_A630)
 
 static inline int adreno_is_a630v1(struct adreno_device *adreno_dev)
@@ -1881,7 +1883,7 @@ static inline void adreno_perfcntr_active_oob_put(
 
 static inline bool adreno_has_gbif(struct adreno_device *adreno_dev)
 {
-	if (adreno_is_a615(adreno_dev))
+	if (adreno_is_a615(adreno_dev) || adreno_is_a616(adreno_dev))
 		return true;
 	else
 		return false;
