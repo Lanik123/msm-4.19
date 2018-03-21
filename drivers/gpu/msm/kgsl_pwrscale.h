@@ -152,7 +152,7 @@ bool kgsl_popp_check(struct kgsl_device *device);
 
 
 #define KGSL_PWRSCALE_INIT(_priv_data) { \
-	.enabled = true, \
+	.enabled = false, \
 	.gpu_profile = { \
 		.private_data = _priv_data, \
 		.profile = { \
