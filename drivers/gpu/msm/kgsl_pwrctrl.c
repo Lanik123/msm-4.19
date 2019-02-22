@@ -2251,7 +2251,7 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	struct device_node *gpubw_dev_node = NULL;
 	struct platform_device *p2dev;
 
-	bus_scale_table = msm_bus_cl_get_pdata(device->pdev);
+	bus_scale_table = kgsl_get_bus_scale_table(device);
 	if (bus_scale_table == NULL)
 		return -EINVAL;
 
