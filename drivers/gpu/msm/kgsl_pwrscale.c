@@ -898,6 +898,7 @@ static int opp_notify(struct notifier_block *nb,
 	else
 		dev_pm_opp_put(opp);
 
+	trace_kgsl_opp_notify(min_freq, max_freq);
 	mutex_lock(&device->mutex);
 
 	max_level = pwr->thermal_pwrlevel;
