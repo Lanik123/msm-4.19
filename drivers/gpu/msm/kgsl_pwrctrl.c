@@ -2206,43 +2206,6 @@ static inline void _close_clks(struct kgsl_device *device)
 		devm_clk_put(&device->pdev->dev, pwr->gpu_bimc_int_clk);
 }
 
-static bool _gpu_freq_supported(struct kgsl_pwrctrl *pwr, unsigned int freq)
-{
-	int i;
-
-	for (i = pwr->num_pwrlevels - 2; i >= 0; i--) {
-		if (pwr->pwrlevels[i].gpu_freq == freq)
-			return true;
-	}
-
-	return false;
-}
-
-void kgsl_pwrctrl_disable_unused_opp(struct kgsl_device *device,
-		struct device *dev)
-{
-	struct dev_pm_opp *opp;
-	unsigned long freq = 0;
-	int ret;
-
-	ret = dev_pm_opp_get_opp_count(dev);
-	/* Return early, If no OPP table or OPP count is zero */
-	if (ret <= 0)
-		return;
-
-	while (1) {
-		opp = dev_pm_opp_find_freq_ceil(dev, &freq);
-		if (IS_ERR(opp))
-			break;
-
-		if (!_gpu_freq_supported(&device->pwrctrl, freq))
-			dev_pm_opp_disable(dev, freq);
-
-		dev_pm_opp_put(opp);
-		freq++;
-	}
-}
-
 static bool pwrlevel_uses_ib(struct msm_bus_scale_pdata *bus_scale_table,
 				struct msm_bus_vectors *vector,
 				struct kgsl_pwrctrl *pwr, int m)
@@ -2304,8 +2267,6 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 		if (freq >= pwr->pwrlevels[i].gpu_freq)
 			pwr->pwrlevels[i].gpu_freq = freq;
 	}
-
-	kgsl_pwrctrl_disable_unused_opp(device, &pdev->dev);
 
 	kgsl_clk_set_rate(device, pwr->num_pwrlevels - 1);
 
