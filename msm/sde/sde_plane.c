@@ -2768,6 +2768,7 @@ static void _sde_plane_map_prop_to_dirty_bits(void)
 
 	plane_prop_array[PLANE_PROP_MULTIRECT_MODE] =
 	plane_prop_array[PLANE_PROP_COLOR_FILL] =
+	plane_prop_array[PLANE_PROP_LAYOUT] =
 		SDE_PLANE_DIRTY_ALL;
 
 	/* no special action required */
@@ -3431,6 +3432,11 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 		{SDE_SSPP_MULTIRECT_PARALLEL, "parallel"},
 		{SDE_SSPP_MULTIRECT_TIME_MX,  "serial"},
 	};
+	static const struct drm_prop_enum_list e_layout_index[] = {
+		{SDE_LAYOUT_NONE, "none"},
+		{SDE_LAYOUT_LEFT, "left"},
+		{SDE_LAYOUT_RIGHT, "right"},
+	};
 	const struct sde_format_extended *format_list;
 	struct sde_kms_info *info;
 	struct sde_plane *psde = to_sde_plane(plane);
@@ -3491,6 +3497,9 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 
 	msm_property_install_enum(&psde->property_info, "src_config", 0x0, 1,
 		e_src_config, ARRAY_SIZE(e_src_config), PLANE_PROP_SRC_CONFIG);
+
+	msm_property_install_enum(&psde->property_info, "sspp_layout", 0x0, 0,
+		e_layout_index, ARRAY_SIZE(e_layout_index), PLANE_PROP_LAYOUT);
 
 	if (psde->pipe_hw->ops.setup_solidfill)
 		msm_property_install_range(&psde->property_info, "color_fill",
