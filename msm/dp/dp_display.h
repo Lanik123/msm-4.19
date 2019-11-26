@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _DP_DISPLAY_H_
@@ -71,6 +71,7 @@ struct dp_display {
 	bool is_mst_supported;
 	u32 max_pclk_khz;
 	void *dp_mst_prv_info;
+	bool force_bond_mode;
 
 	int (*enable)(struct dp_display *dp_display, void *panel);
 	int (*post_enable)(struct dp_display *dp_display, void *panel);
