@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _DP_DRM_H_
@@ -158,6 +158,14 @@ int dp_connector_update_pps(struct drm_connector *connector,
  * @encoder: Pointer to encoder for mst bridge mapping
  */
 int dp_mst_drm_bridge_init(void *display,
+	struct drm_encoder *encoder);
+
+/**
+ * dp_mst_drm_super_bridge_init - initialize mst super bridge
+ * @display: Pointer to private display structure
+ * @encoder: Pointer to encoder for mst bridge mapping
+ */
+int dp_mst_drm_super_bridge_init(void *display,
 	struct drm_encoder *encoder);
 
 /**
