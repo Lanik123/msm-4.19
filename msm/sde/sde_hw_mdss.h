@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_HW_MDSS_H
@@ -37,7 +37,7 @@
 #endif
 
 #define MAX_DSI_DISPLAYS		2
-#define MAX_DATA_PATH_PER_DSIPLAY	2
+#define MAX_DATA_PATH_PER_DSIPLAY	4
 
 enum sde_format_flags {
 	SDE_FORMAT_FLAG_YUV_BIT,

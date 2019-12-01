@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_HW_CATALOG_H
@@ -77,6 +77,7 @@
 
 #define CRTC_DUAL_MIXERS	2
 #define CRTC_QUAD_MIXERS	4
+#define CRTC_DUAL_MIXERS_ONLY	2
 #define MAX_MIXERS_PER_CRTC	4
 
 #define SDE_COLOR_PROCESS_VER(MAJOR, MINOR) \
