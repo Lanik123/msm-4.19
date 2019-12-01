@@ -917,7 +917,7 @@ static int _sde_crtc_check_rois_centered_and_symmetric(struct drm_crtc *crtc,
 {
 	struct sde_crtc *sde_crtc;
 	struct sde_crtc_state *crtc_state;
-	const struct sde_rect *roi[CRTC_DUAL_MIXERS];
+	const struct sde_rect *roi[MAX_MIXERS_PER_CRTC];
 
 	if (!crtc || !state)
 		return -EINVAL;
@@ -925,7 +925,7 @@ static int _sde_crtc_check_rois_centered_and_symmetric(struct drm_crtc *crtc,
 	sde_crtc = to_sde_crtc(crtc);
 	crtc_state = to_sde_crtc_state(state);
 
-	if (sde_crtc->num_mixers > CRTC_DUAL_MIXERS) {
+	if (sde_crtc->num_mixers > MAX_MIXERS_PER_CRTC) {
 		SDE_ERROR("%s: unsupported number of mixers: %d\n",
 				sde_crtc->name, sde_crtc->num_mixers);
 		return -EINVAL;
@@ -1538,7 +1538,7 @@ static void _sde_crtc_blend_setup(struct drm_crtc *crtc,
 
 	SDE_DEBUG("%s\n", sde_crtc->name);
 
-	if (sde_crtc->num_mixers > CRTC_DUAL_MIXERS) {
+	if (sde_crtc->num_mixers > MAX_MIXERS_PER_CRTC) {
 		SDE_ERROR("invalid number mixers: %d\n", sde_crtc->num_mixers);
 		return;
 	}
@@ -1953,7 +1953,7 @@ static int _sde_validate_hw_resources(struct sde_crtc *sde_crtc)
 	}
 
 	if (!sde_crtc->num_mixers ||
-		sde_crtc->num_mixers > CRTC_DUAL_MIXERS) {
+		sde_crtc->num_mixers > MAX_MIXERS_PER_CRTC) {
 		SDE_ERROR("%s: invalid number mixers: %d\n",
 			sde_crtc->name, sde_crtc->num_mixers);
 		SDE_EVT32(DRMID(&sde_crtc->base), sde_crtc->num_mixers,
