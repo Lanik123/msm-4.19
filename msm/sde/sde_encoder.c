@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -234,6 +234,9 @@ enum sde_enc_rc_states {
  * @pm_qos_cpu_req:		pm_qos request for cpu frequency
  * @mode_info:                  stores the current mode and should be used
  *				 only in commit phase
+ * @crtc_lineptr_cb:	Callback into the upper layer / CRTC for
+ *			notification of the LINEPTR
+ * lineptr_value: to cache lineptr value
  */
 struct sde_encoder_virt {
 	struct drm_encoder base;
@@ -299,6 +302,9 @@ struct sde_encoder_virt {
 	bool elevated_ahb_vote;
 	struct pm_qos_request pm_qos_cpu_req;
 	struct msm_mode_info mode_info;
+
+	void (*crtc_lineptr_cb)(void *data, ktime_t timestamp);
+	u32 lineptr_value;
 };
 
 #define to_sde_encoder_virt(x) container_of(x, struct sde_encoder_virt, base)
@@ -3419,6 +3425,7 @@ static void _sde_encoder_virt_enable_helper(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = NULL;
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
+	int ret;
 
 	if (!drm_enc || !drm_enc->dev || !drm_enc->dev->dev_private) {
 		SDE_ERROR("invalid parameters\n");
@@ -3456,6 +3463,13 @@ static void _sde_encoder_virt_enable_helper(struct drm_encoder *drm_enc)
 		sde_enc->cur_master->hw_ctl->ops.setup_intf_cfg_v1(
 				sde_enc->cur_master->hw_ctl,
 				&sde_enc->cur_master->intf_cfg_v1);
+
+	if (sde_enc->lineptr_value) {
+		ret = sde_encoder_set_lineptr_value(
+					drm_enc, sde_enc->lineptr_value);
+		if (ret)
+			SDE_ERROR("lineptr value write failed\n");
+	}
 
 	_sde_encoder_update_vsync_source(sde_enc, &sde_enc->disp_info, false);
 	sde_encoder_control_te(drm_enc, true);
@@ -3892,6 +3906,26 @@ static void sde_encoder_vblank_callback(struct drm_encoder *drm_enc,
 
 	atomic_inc(&phy_enc->vsync_cnt);
 	SDE_ATRACE_END("encoder_vblank_callback");
+}
+
+static void sde_encoder_lineptr_callback(struct drm_encoder *drm_enc,
+			struct sde_encoder_phys *phy_enc, ktime_t timestamp)
+{
+	struct sde_encoder_virt *sde_enc = NULL;
+	unsigned long lock_flags;
+
+	if (!drm_enc || !phy_enc)
+		return;
+
+	SDE_ATRACE_BEGIN("encoder_lineptr_callback");
+	sde_enc = to_sde_encoder_virt(drm_enc);
+
+	spin_lock_irqsave(&sde_enc->enc_spinlock, lock_flags);
+	if (sde_enc->crtc_lineptr_cb)
+		sde_enc->crtc_lineptr_cb(sde_enc->crtc, timestamp);
+	spin_unlock_irqrestore(&sde_enc->enc_spinlock, lock_flags);
+
+	SDE_ATRACE_END("encoder_lineptr_callback");
 }
 
 static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
@@ -5682,6 +5716,7 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 	enum sde_intf_type intf_type;
 	struct sde_encoder_virt_ops parent_ops = {
 		sde_encoder_vblank_callback,
+		sde_encoder_lineptr_callback,
 		sde_encoder_underrun_callback,
 		sde_encoder_frame_done_callback,
 		sde_encoder_get_qsync_fps_callback,
@@ -5916,6 +5951,7 @@ struct drm_encoder *sde_encoder_init_with_ops(
 			sde_encoder_off_work);
 	sde_enc->vblank_enabled = false;
 	sde_enc->qdss_status = false;
+	sde_enc->lineptr_value = 0;
 
 	kthread_init_work(&sde_enc->vsync_event_work,
 			sde_encoder_vsync_event_work_handler);
@@ -6357,4 +6393,29 @@ void sde_encoder_recovery_events_handler(struct drm_encoder *encoder,
 
 	sde_enc = to_sde_encoder_virt(encoder);
 	sde_enc->recovery_events_enabled = enabled;
+}
+
+int sde_encoder_set_lineptr_value(struct drm_encoder *drm_enc,
+					u32 line_value)
+{
+	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
+	struct sde_encoder_phys *phys = sde_enc->cur_master;
+
+	sde_enc->lineptr_value = line_value;
+
+	if (phys && phys->ops.set_lineptr)
+		return phys->ops.set_lineptr(phys, line_value);
+
+	return -EINVAL;
+}
+
+void sde_encoder_register_lineptr_callback(struct drm_encoder *drm_enc,
+			void (*lp_cb)(void *, ktime_t))
+{
+	unsigned long lock_flags;
+	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
+
+	spin_lock_irqsave(&sde_enc->enc_spinlock, lock_flags);
+	sde_enc->crtc_lineptr_cb = lp_cb;
+	spin_unlock_irqrestore(&sde_enc->enc_spinlock, lock_flags);
 }

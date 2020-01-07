@@ -386,6 +386,88 @@ static ssize_t vsync_event_show(struct device *device,
 			ktime_to_ns(sde_crtc->vblank_last_cb_time));
 }
 
+static ssize_t lineptr_event_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_crtc *crtc;
+	struct sde_crtc *sde_crtc;
+	ssize_t ret;
+	unsigned long flags;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	crtc = dev_get_drvdata(device);
+	if (!crtc)
+		return -EINVAL;
+
+	sde_crtc = to_sde_crtc(crtc);
+
+	spin_lock_irqsave(&sde_crtc->lineptr_lock, flags);
+	ret = scnprintf(buf, PAGE_SIZE, "LINEPTR=%llu\n",
+			ktime_to_ns(sde_crtc->lineptr_cb_ts));
+	spin_unlock_irqrestore(&sde_crtc->lineptr_lock, flags);
+
+	return ret;
+}
+
+static ssize_t lineptr_value_store(struct device *device,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_crtc *crtc;
+	struct drm_encoder *encoder;
+	u32 line_value;
+	int ret;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	crtc = dev_get_drvdata(device);
+	if (!crtc)
+		return -EINVAL;
+
+	ret = kstrtou32(buf, 10, &line_value);
+	if (ret < 0) {
+		SDE_ERROR(
+		"ret=%d: failed to convert buf to an unsigned int\n", ret);
+		return ret;
+	}
+	SDE_EVT32_VERBOSE(DRMID(crtc), line_value);
+
+	drm_for_each_encoder_mask(encoder, crtc->dev,
+				crtc->state->encoder_mask) {
+		if ((encoder->crtc != crtc) ||
+				sde_encoder_in_clone_mode(encoder))
+			continue;
+
+		if (!sde_encoder_is_dsi_display(encoder) ||
+				!sde_encoder_check_curr_mode(
+				encoder, MSM_DISPLAY_VIDEO_MODE)) {
+			SDE_ERROR(
+				"Feature supported only in builtin video mode display\n");
+			return -EINVAL;
+		}
+
+		drm_modeset_lock(&crtc->mutex, NULL);
+		if (!crtc->state->active) {
+			ret = -EOPNOTSUPP;
+			SDE_ERROR("crtc state inactive\n");
+		} else {
+			ret = sde_encoder_set_lineptr_value(
+							encoder, line_value);
+		}
+		drm_modeset_unlock(&crtc->mutex);
+	}
+
+	return ret ? ret : count;
+}
+
+static DEVICE_ATTR_RO(lineptr_event);
+static DEVICE_ATTR_WO(lineptr_value);
 static DEVICE_ATTR_RO(vsync_event);
 static DEVICE_ATTR_RO(measured_fps);
 static DEVICE_ATTR_RW(fps_periodicity_ms);
@@ -394,6 +476,8 @@ static struct attribute *sde_crtc_dev_attrs[] = {
 	&dev_attr_vsync_event.attr,
 	&dev_attr_measured_fps.attr,
 	&dev_attr_fps_periodicity_ms.attr,
+	&dev_attr_lineptr_event.attr,
+	&dev_attr_lineptr_value.attr,
 	NULL
 };
 
@@ -2363,6 +2447,20 @@ static void sde_crtc_vblank_cb(void *data)
 	SDE_EVT32_VERBOSE(DRMID(crtc));
 }
 
+static void sde_crtc_lineptr_cb(void *data, ktime_t timestamp)
+{
+	struct drm_crtc *crtc = (struct drm_crtc *)data;
+	struct sde_crtc *sde_crtc = to_sde_crtc(crtc);
+	unsigned long flags;
+
+	spin_lock_irqsave(&sde_crtc->lineptr_lock, flags);
+	sde_crtc->lineptr_cb_ts = timestamp;
+	spin_unlock_irqrestore(&sde_crtc->lineptr_lock, flags);
+
+	sysfs_notify_dirent(sde_crtc->lineptr_event_sf);
+	SDE_EVT32_VERBOSE(DRMID(crtc));
+}
+
 static void _sde_crtc_retire_event(struct drm_connector *connector,
 		ktime_t ts, enum sde_fence_event fence_event)
 {
@@ -4184,6 +4282,8 @@ static void sde_crtc_enable(struct drm_crtc *crtc,
 			crtc->state->encoder_mask) {
 		sde_encoder_register_frame_event_callback(encoder,
 				sde_crtc_frame_event_cb, crtc);
+		sde_encoder_register_lineptr_callback(encoder,
+				sde_crtc_lineptr_cb);
 	}
 
 	sde_crtc->enabled = true;
@@ -6290,6 +6390,7 @@ struct drm_crtc *sde_crtc_init(struct drm_device *dev, struct drm_plane *plane)
 
 	mutex_init(&sde_crtc->crtc_lock);
 	spin_lock_init(&sde_crtc->spin_lock);
+	spin_lock_init(&sde_crtc->lineptr_lock);
 	atomic_set(&sde_crtc->frame_pending, 0);
 
 	sde_crtc->enabled = false;
@@ -6399,6 +6500,11 @@ int sde_crtc_post_init(struct drm_device *dev, struct drm_crtc *crtc)
 	if (!sde_crtc->vsync_event_sf)
 		SDE_ERROR("crtc:%d vsync_event sysfs create failed\n",
 						crtc->base.id);
+	sde_crtc->lineptr_event_sf = sysfs_get_dirent(
+		sde_crtc->sysfs_dev->kobj.sd, "lineptr_event");
+	if (!sde_crtc->lineptr_event_sf)
+		SDE_ERROR("crtc:%d lineptr_event sysfs create failed\n",
+						DRMID(crtc));
 
 end:
 	return rc;

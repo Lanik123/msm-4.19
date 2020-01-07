@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef _SDE_HW_INTF_H
@@ -188,6 +188,11 @@ struct sde_hw_intf_ops {
 	 */
 	int (*check_and_reset_tearcheck)(struct sde_hw_intf *intf,
 			struct intf_tear_status *status);
+
+	 /**
+	  * Program the register with line value
+	  */
+	 int (*set_line_ptr)(struct sde_hw_intf *intf, u32 lineptr);
 };
 
 struct sde_hw_intf {

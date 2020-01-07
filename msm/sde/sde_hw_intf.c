@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 #include <linux/iopoll.h>
 
@@ -61,6 +61,7 @@
 #define INTF_MISR_CTRL			0x180
 #define INTF_MISR_SIGNATURE		0x184
 
+#define INTF_PROG_LINE_INTR_CONF        0x250
 #define INTF_MUX                        0x25C
 #define INTF_STATUS                     0x26C
 #define INTF_AVR_CONTROL                0x270
@@ -82,6 +83,25 @@
 #define INTF_TEAR_LINE_COUNT            0x2B0
 #define INTF_TEAR_AUTOREFRESH_CONFIG    0x2B4
 #define INTF_TEAR_TEAR_DETECT_CTRL      0x2B8
+
+static int sde_hw_intf_set_lineptr(struct sde_hw_intf *ctx,
+			u32 lineptr)
+{
+	struct sde_hw_blk_reg_map *c;
+	u32 val;
+
+	if (!ctx) {
+		SDE_ERROR("invalid input parameter(s)\n");
+		return -EINVAL;
+	}
+
+	c = &ctx->hw;
+	val = lineptr ? lineptr : 0xFFFFFFFF;
+
+	SDE_REG_WRITE(c, INTF_PROG_LINE_INTR_CONF, val);
+
+	return 0;
+}
 
 static struct sde_intf_cfg *_intf_offset(enum sde_intf intf,
 		struct sde_mdss_cfg *m,
@@ -683,6 +703,7 @@ static void _setup_intf_ops(struct sde_hw_intf_ops *ops,
 	ops->avr_setup = sde_hw_intf_avr_setup;
 	ops->avr_trigger = sde_hw_intf_avr_trigger;
 	ops->avr_ctrl = sde_hw_intf_avr_ctrl;
+	ops->set_line_ptr = sde_hw_intf_set_lineptr;
 
 	if (cap & BIT(SDE_INTF_INPUT_CTRL))
 		ops->bind_pingpong_blk = sde_hw_intf_bind_pingpong_blk;

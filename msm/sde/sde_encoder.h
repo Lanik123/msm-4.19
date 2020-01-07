@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -131,6 +131,25 @@ struct sde_rsc_client *sde_encoder_get_rsc_client(struct drm_encoder *encoder);
  * @Returns:	zero on success
  */
 int sde_encoder_poll_line_counts(struct drm_encoder *encoder);
+
+/**
+ * sde_encoder_set_lineptr_value - Configure the line value where the interrupt
+ *	needs to be triggered.
+ * @encoder:	encoder pointer
+ * line_value:	lineptr value user requested
+ * Returns: 0 on success, errorcode otherwise
+ */
+int sde_encoder_set_lineptr_value(struct drm_encoder *encoder,
+		u32 line_value);
+
+/**
+ * sde_encoder_register_lineptr_callback - provide callback to encoder that
+ *	will be called on the next lineptr.
+ * @encoder:	encoder pointer
+ * @cb:		callback pointer, provide NULL to deregister
+ */
+void sde_encoder_register_lineptr_callback(struct drm_encoder *encoder,
+	      void (*cb)(void *, ktime_t));
 
 /**
  * sde_encoder_prepare_for_kickoff - schedule double buffer flip of the ctl

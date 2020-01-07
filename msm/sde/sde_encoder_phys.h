@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
 #ifndef __SDE_ENCODER_PHYS_H__
@@ -68,6 +68,8 @@ struct sde_encoder_phys;
  *	provides for the physical encoders to use to callback.
  * @handle_vblank_virt:	Notify virtual encoder of vblank IRQ reception
  *			Note: This is called from IRQ handler context.
+ * @handle_lineptr_virt: Notify virtual encoder of lineptr IRQ reception
+ *			Note: This is called from IRQ handler context.
  * @handle_underrun_virt: Notify virtual encoder of underrun IRQ reception
  *			Note: This is called from IRQ handler context.
  * @handle_frame_done:	Notify virtual encoder that this phys encoder
@@ -77,6 +79,8 @@ struct sde_encoder_phys;
 struct sde_encoder_virt_ops {
 	void (*handle_vblank_virt)(struct drm_encoder *parent,
 			struct sde_encoder_phys *phys);
+	void (*handle_lineptr_virt)(struct drm_encoder *parent,
+			struct sde_encoder_phys *phys,  ktime_t time);
 	void (*handle_underrun_virt)(struct drm_encoder *parent,
 			struct sde_encoder_phys *phys);
 	void (*handle_frame_done)(struct drm_encoder *parent,
@@ -106,6 +110,7 @@ struct sde_encoder_virt_ops {
  *				resources that this phys_enc is using.
  *				Expect no overlap between phys_encs.
  * @control_vblank_irq		Register/Deregister for VBLANK IRQ
+ * @set_lineptr:	Writes lineptr value to register
  * @wait_for_commit_done:	Wait for hardware to have flushed the
  *				current pending frames to hardware
  * @wait_for_tx_complete:	Wait for hardware to transfer the pixels
@@ -158,6 +163,8 @@ struct sde_encoder_phys_ops {
 			struct sde_encoder_hw_resources *hw_res,
 			struct drm_connector_state *conn_state);
 	int (*control_vblank_irq)(struct sde_encoder_phys *enc, bool enable);
+	int (*set_lineptr)(struct sde_encoder_phys *phys_enc,
+			u32 lineptr);
 	int (*wait_for_commit_done)(struct sde_encoder_phys *phys_enc);
 	int (*wait_for_tx_complete)(struct sde_encoder_phys *phys_enc);
 	int (*wait_for_vblank)(struct sde_encoder_phys *phys_enc);
@@ -202,6 +209,7 @@ struct sde_encoder_phys_ops {
  * @INTR_IDX_AUTOREFRESH_DONE:  Autorefresh done for cmd mode panel meaning
  *                              autorefresh has triggered a double buffer flip
  * @INTR_IDX_WRPTR:    Writepointer start interrupt for cmd mode panel
+ * @INTR_IDX_LINEPTR:  Lineptr interrupt for video mode panel
  */
 enum sde_intr_idx {
 	INTR_IDX_VSYNC,
@@ -217,6 +225,7 @@ enum sde_intr_idx {
 	INTR_IDX_PP4_OVFL,
 	INTR_IDX_PP5_OVFL,
 	INTR_IDX_WRPTR,
+	INTR_IDX_LINEPTR,
 	INTR_IDX_MAX,
 };
 

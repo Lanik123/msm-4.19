@@ -562,6 +562,19 @@ static void sde_encoder_phys_vid_underrun_irq(void *arg, int irq_idx)
 			phys_enc);
 }
 
+static void sde_encoder_phys_vid_lineptr_irq(void *arg, int irq_idx)
+{
+	struct sde_encoder_phys *phys_enc = arg;
+	ktime_t timestamp = ktime_get();
+
+	if (!phys_enc)
+		return;
+
+	if (phys_enc->parent_ops.handle_lineptr_virt)
+		phys_enc->parent_ops.handle_lineptr_virt(phys_enc->parent,
+				phys_enc, timestamp);
+}
+
 static void _sde_encoder_phys_vid_setup_irq_hw_idx(
 		struct sde_encoder_phys *phys_enc)
 {
@@ -578,6 +591,10 @@ static void _sde_encoder_phys_vid_setup_irq_hw_idx(
 		irq->hw_idx = phys_enc->intf_idx;
 
 	irq = &phys_enc->irq[INTR_IDX_UNDERRUN];
+	if (irq->irq_idx < 0)
+		irq->hw_idx = phys_enc->intf_idx;
+
+	irq = &phys_enc->irq[INTR_IDX_LINEPTR];
 	if (irq->irq_idx < 0)
 		irq->hw_idx = phys_enc->intf_idx;
 }
@@ -709,6 +726,16 @@ end:
 	}
 	mutex_unlock(phys_enc->vblank_ctl_lock);
 	return ret;
+}
+
+static int sde_encoder_phys_vid_set_lineptr(
+		struct sde_encoder_phys *phys_enc, u32 lineptr)
+{
+	if (phys_enc && phys_enc->hw_intf->ops.set_line_ptr)
+		return phys_enc->hw_intf->ops.set_line_ptr(
+				phys_enc->hw_intf, lineptr);
+
+	return -EINVAL;
 }
 
 static bool sde_encoder_phys_vid_wait_dma_trigger(
@@ -1159,9 +1186,16 @@ static void sde_encoder_phys_vid_irq_control(struct sde_encoder_phys *phys_enc,
 			return;
 
 		sde_encoder_helper_register_irq(phys_enc, INTR_IDX_UNDERRUN);
+		/*
+		 * IRQ will not be triggered unless a valid non-zero value
+		 * is written on the lineptr_conf register -
+		 * which will be controlled through the sysfs node write
+		 */
+		sde_encoder_helper_register_irq(phys_enc, INTR_IDX_LINEPTR);
 	} else {
 		sde_encoder_phys_vid_control_vblank_irq(phys_enc, false);
 		sde_encoder_helper_unregister_irq(phys_enc, INTR_IDX_UNDERRUN);
+		sde_encoder_helper_unregister_irq(phys_enc, INTR_IDX_LINEPTR);
 	}
 }
 
@@ -1258,6 +1292,7 @@ static void sde_encoder_phys_vid_init_ops(struct sde_encoder_phys_ops *ops)
 	ops->destroy = sde_encoder_phys_vid_destroy;
 	ops->get_hw_resources = sde_encoder_phys_vid_get_hw_resources;
 	ops->control_vblank_irq = sde_encoder_phys_vid_control_vblank_irq;
+	ops->set_lineptr = sde_encoder_phys_vid_set_lineptr;
 	ops->wait_for_commit_done = sde_encoder_phys_vid_wait_for_vblank;
 	ops->wait_for_vblank = sde_encoder_phys_vid_wait_for_vblank_no_notify;
 	ops->wait_for_tx_complete = sde_encoder_phys_vid_wait_for_vblank;
@@ -1337,6 +1372,12 @@ struct sde_encoder_phys *sde_encoder_phys_vid_init(
 	irq->intr_type = SDE_IRQ_TYPE_INTF_UNDER_RUN;
 	irq->intr_idx = INTR_IDX_UNDERRUN;
 	irq->cb.func = sde_encoder_phys_vid_underrun_irq;
+
+	irq = &phys_enc->irq[INTR_IDX_LINEPTR];
+	irq->name = "lineptr_irq";
+	irq->intr_type = SDE_IRQ_TYPE_PROG_LINE;
+	irq->intr_idx = INTR_IDX_LINEPTR;
+	irq->cb.func = sde_encoder_phys_vid_lineptr_irq;
 
 	atomic_set(&phys_enc->vblank_refcount, 0);
 	atomic_set(&phys_enc->pending_kickoff_cnt, 0);

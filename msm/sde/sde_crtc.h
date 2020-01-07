@@ -263,6 +263,9 @@ struct sde_crtc_misr_info {
  * @ltm_buffer_lock : muttx to protect ltm_buffers allcation and free
  * @ltm_lock        : Spinlock to protect ltm buffer_cnt, hist_en and ltm lists
  * @needs_hw_reset  : Initiate a hw ctl reset
+ * @lineptr_event_sf : lineptr event notifier sysfs device
+ * @lineptr_lock  : spin_lock for lineptr event
+ * @lineptr_cb_ts : ktime at lineptr irq
  */
 struct sde_crtc {
 	struct drm_crtc base;
@@ -342,6 +345,10 @@ struct sde_crtc {
 	struct mutex ltm_buffer_lock;
 	spinlock_t ltm_lock;
 	bool needs_hw_reset;
+
+	struct kernfs_node *lineptr_event_sf;
+	spinlock_t lineptr_lock;
+	ktime_t lineptr_cb_ts;
 };
 
 #define to_sde_crtc(x) container_of(x, struct sde_crtc, base)
