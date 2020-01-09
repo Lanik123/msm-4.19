@@ -418,6 +418,89 @@ static int reg_dmav1_get_dspp_blk(struct sde_hw_cp_cfg *hw_cfg,
 	return rc;
 }
 
+static int reg_dmav1_get_dspp_blkv2(struct sde_hw_cp_cfg *hw_cfg,
+		enum sde_dspp curr_dspp, u32 *blk, u32 *num_of_mixers,
+		bool use_all, bool set_cur_dspp)
+{
+	struct sde_hw_dspp *dspp;
+	int rc = 0, i = 0, curr_dspp_idx = 0, mixers_count = 0;
+	*num_of_mixers = 0;
+
+	if (hw_cfg == NULL) {
+		DRM_ERROR("Invalid sde_hw_cp_cfg structure provided\n");
+		return -EINVAL;
+	}
+
+	if (hw_cfg->dspp == NULL) {
+		DRM_ERROR("Invalid sde_hw_dspp structure provided in hw_cfg\n");
+		return -EINVAL;
+	}
+
+	if (blk == NULL) {
+		DRM_ERROR("Invalid payload provided\n");
+		return -EINVAL;
+	}
+
+	if (curr_dspp >= DSPP_MAX) {
+		DRM_ERROR("Invalid current dspp idx %d", curr_dspp);
+		return -EINVAL;
+	}
+
+	DRM_DEBUG_DRIVER("broadcast_disabled %d, use_all %d, set_cur_dspp %d\n",
+		hw_cfg->broadcast_disabled, use_all, set_cur_dspp);
+
+	if (hw_cfg->broadcast_disabled || set_cur_dspp) {
+		*blk = dspp_mapping[curr_dspp];
+		(*num_of_mixers)++;
+		return rc;
+	} else if (use_all) {
+		if (curr_dspp == hw_cfg->dspp[0]->idx) {
+			curr_dspp_idx = 0;
+			mixers_count = hw_cfg->num_of_mixers;
+		} else {
+			DRM_DEBUG_DRIVER("Slave dspp instance %d\n", dspp->idx);
+			return -EALREADY;
+		}
+	} else if (hw_cfg->num_of_mixers == 4) {
+		if (curr_dspp == hw_cfg->dspp[0]->idx)
+			curr_dspp_idx = 0;
+		else if (curr_dspp == hw_cfg->dspp[2]->idx)
+			curr_dspp_idx = 2;
+		else {
+			DRM_DEBUG_DRIVER("Slave dspp instance %d\n", dspp->idx);
+			return -EALREADY;
+		}
+		mixers_count = hw_cfg->num_of_mixers/2;
+	} else {
+		DRM_DEBUG_DRIVER("Unsupported config %d\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < mixers_count; i++) {
+		dspp = hw_cfg->dspp[curr_dspp_idx++];
+		if (!dspp) {
+			DRM_ERROR("Invalid dspp NULL");
+			rc = -EINVAL;
+			break;
+		}
+		if (dspp->idx >= DSPP_MAX) {
+			DRM_ERROR("Invalid dspp idx %d", dspp->idx);
+			rc = -EINVAL;
+			break;
+		}
+		*blk |= dspp_mapping[dspp->idx];
+		(*num_of_mixers)++;
+	}
+
+	if (!rc && !blk) {
+		rc = -EINVAL;
+		*num_of_mixers = 0;
+	}
+
+	return rc;
+}
+
+
 void reg_dmav1_setup_dspp_vlutv18(struct sde_hw_dspp *ctx, void *cfg)
 {
 	struct drm_msm_pa_vlut *payload = NULL;
@@ -1158,11 +1241,16 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 	struct sde_hw_cp_cfg *hw_cfg = cfg;
 	struct sde_reg_dma_setup_ops_cfg dma_write_cfg;
 	struct drm_msm_pcc *pcc_cfg;
+	struct drm_msm_pcc *curr_pcc_cfg;
 	struct drm_msm_pcc_coeff *coeffs = NULL;
 	u32 *data = NULL;
 	int rc, i = 0;
 	u32 reg = 0;
 	u32 num_of_mixers, blk = 0;
+	u32 pcc_struct_in_payload = (hw_cfg->len) / sizeof(struct drm_msm_pcc);
+	u32 no_of_pcc_struct = 0;
+	bool use_all = true;
+	bool set_cur_dspp = false;
 
 	rc = reg_dma_dspp_check(ctx, cfg, PCC);
 	if (rc)
@@ -1174,14 +1262,40 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 		return;
 	}
 
-	if (hw_cfg->len != sizeof(struct drm_msm_pcc)) {
-		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-				hw_cfg->len, sizeof(struct drm_msm_pcc));
+	if (((hw_cfg->len) % sizeof(struct drm_msm_pcc)) != 0) {
+		DRM_ERROR("Invalid Payload. payload len [%d]\n", hw_cfg->len);
 		return;
 	}
 
-	rc = reg_dmav1_get_dspp_blk(hw_cfg, ctx->idx, &blk,
-		&num_of_mixers);
+	pcc_cfg = hw_cfg->payload;
+
+	no_of_pcc_struct = (NUM_STRUCT_MASK & pcc_cfg->flags) >> 60;
+
+	if (no_of_pcc_struct == 0)
+		no_of_pcc_struct = 1;
+
+	if ((no_of_pcc_struct != pcc_struct_in_payload) ||
+			(no_of_pcc_struct > hw_cfg->num_of_mixers)) {
+		DRM_ERROR("Invalid Payload\n");
+		DRM_DEBUG_DRIVER("no_of_pcc_struct %d, pcc_struct_payload %d\n",
+			no_of_pcc_struct, pcc_struct_in_payload);
+		return;
+	} else if (no_of_pcc_struct == 1) {
+		use_all = true;
+	} else {
+		use_all = false;
+	}
+
+	if (no_of_pcc_struct == hw_cfg->num_of_mixers)
+		set_cur_dspp = true;
+	else
+		set_cur_dspp = false;
+
+	DRM_DEBUG_DRIVER("no_of_pcc_struct %d, num_of_mixers %d, dspp_idx %d\n",
+		no_of_pcc_struct, hw_cfg->num_of_mixers, ctx->idx);
+
+	rc = reg_dmav1_get_dspp_blkv2(hw_cfg, ctx->idx, &blk,
+		&num_of_mixers, use_all, set_cur_dspp);
 	if (rc == -EINVAL) {
 		DRM_ERROR("unable to determine LUTDMA DSPP blocks\n");
 		return;
@@ -1189,7 +1303,22 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 		return;
 	}
 
-	pcc_cfg = hw_cfg->payload;
+	curr_pcc_cfg = hw_cfg->payload;
+
+	if (no_of_pcc_struct == 1) {
+		pcc_cfg = curr_pcc_cfg;
+	} else if (no_of_pcc_struct == hw_cfg->num_of_mixers) {
+		curr_pcc_cfg += (ctx->idx - 1);
+		pcc_cfg = curr_pcc_cfg;
+	} else if ((no_of_pcc_struct == 2) && (hw_cfg->num_of_mixers == 4)) {
+		if (ctx->idx == hw_cfg->dspp[2]->idx)
+			curr_pcc_cfg++;
+		pcc_cfg = curr_pcc_cfg;
+	} else {
+		DRM_ERROR("Invalid config data\n");
+		return;
+	}
+
 	dma_ops = sde_reg_dma_get_ops();
 	dma_ops->reset_reg_dma_buf(dspp_buf[PCC][ctx->idx]);
 
