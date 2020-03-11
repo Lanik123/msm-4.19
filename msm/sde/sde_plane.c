@@ -4146,6 +4146,15 @@ sde_plane_duplicate_state(struct drm_plane *plane)
 
 	__drm_atomic_helper_plane_duplicate_state(plane, &pstate->base);
 
+	/* reset layout offset */
+	if (pstate->layout_offset) {
+		if (pstate->layout_offset > 0)
+			pstate->base.crtc_x += pstate->layout_offset;
+		pstate->property_values[PLANE_PROP_LAYOUT].value =
+				SDE_LAYOUT_NONE;
+		pstate->layout_offset = 0;
+	}
+
 	return &pstate->base;
 }
 
