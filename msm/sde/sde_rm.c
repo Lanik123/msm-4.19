@@ -1270,6 +1270,7 @@ static int _sde_rm_reserve_dsc(
 {
 	struct sde_rm_hw_iter iter_i, iter_j;
 	struct sde_rm_hw_blk *dsc[MAX_BLOCKS];
+	u32 reserve_mask = 0;
 	int alloc_count = 0;
 	int num_dsc_enc = top->num_comp_enc;
 	int i;
@@ -1282,8 +1283,9 @@ static int _sde_rm_reserve_dsc(
 	/* Find a first DSC */
 	while (alloc_count != num_dsc_enc &&
 			_sde_rm_get_hw_locked(rm, &iter_i)) {
-		memset(&dsc, 0, sizeof(dsc));
-		alloc_count = 0;
+
+		if (reserve_mask & (1 << iter_i.blk->id))
+			continue;
 
 		if (_dsc_ids && (iter_i.blk->id != _dsc_ids[alloc_count]))
 			continue;
@@ -1296,6 +1298,7 @@ static int _sde_rm_reserve_dsc(
 			alloc_count,
 			_dsc_ids ? _dsc_ids[alloc_count] : -1);
 
+		reserve_mask |= (1 << iter_i.blk->id);
 		dsc[alloc_count++] = iter_i.blk;
 
 		/* Valid first dsc found, find matching peers */
@@ -1303,7 +1306,7 @@ static int _sde_rm_reserve_dsc(
 
 		while (alloc_count != num_dsc_enc &&
 				_sde_rm_get_hw_locked(rm, &iter_j)) {
-			if (iter_i.blk == iter_j.blk)
+			if (reserve_mask & (1 << iter_j.blk->id))
 				continue;
 
 			if (_dsc_ids && (iter_j.blk->id !=
@@ -1319,7 +1322,15 @@ static int _sde_rm_reserve_dsc(
 				alloc_count,
 				_dsc_ids ? _dsc_ids[alloc_count] : -1);
 
+			reserve_mask |= (1 << iter_j.blk->id);
 			dsc[alloc_count++] = iter_j.blk;
+			break;
+		}
+
+		/* Rollback primary DSC if peer is not found */
+		if (!iter_j.hw) {
+			reserve_mask &= ~(1 << iter_i.blk->id);
+			--alloc_count;
 		}
 	}
 
@@ -1329,7 +1340,7 @@ static int _sde_rm_reserve_dsc(
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(dsc); i++) {
+	for (i = 0; i < alloc_count; i++) {
 		if (!dsc[i])
 			break;
 
