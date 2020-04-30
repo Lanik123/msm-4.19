@@ -2312,6 +2312,8 @@ struct dp_debug *dp_debug_get(struct dp_debug_in *in)
 
 	INIT_LIST_HEAD(&dp_debug->dp_mst_connector_list.list);
 
+	mutex_init(&dp_debug->dp_mst_connector_list.lock);
+
 	/*
 	 * Do not associate the head of the list with any connector in order to
 	 * maintain backwards compatibility with the SST use case.
