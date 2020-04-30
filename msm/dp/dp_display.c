@@ -2960,6 +2960,11 @@ static int dp_display_mst_connector_update_link_info(
 			DP_RECEIVER_DSC_CAP_SIZE + 1);
 	memcpy(&dp_panel->link_info, &dp->panel->link_info,
 			sizeof(dp_panel->link_info));
+	dp_panel->mst_state = dp->panel->mst_state;
+	dp_panel->widebus_en = dp->panel->widebus_en;
+	dp_panel->fec_en = dp->panel->fec_en;
+	dp_panel->dsc_en = dp->panel->dsc_en;
+	dp_panel->fec_overhead_fp = dp->panel->fec_overhead_fp;
 
 	DP_MST_DEBUG("dp mst connector:%d link info updated\n",
 		connector->base.id);
