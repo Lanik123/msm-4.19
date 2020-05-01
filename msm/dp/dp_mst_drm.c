@@ -1696,7 +1696,7 @@ dp_mst_connector_detect(struct drm_connector *connector, bool force,
 			struct drm_connector *p;
 
 			p = dp_mst_find_sibling_connector(connector);
-			if (p && p->connector_type_id <
+			if (!p || p->connector_type_id <
 					connector->connector_type_id)
 				status = connector_status_disconnected;
 		}
