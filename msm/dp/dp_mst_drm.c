@@ -2155,6 +2155,37 @@ static void dp_mst_connector_pre_destroy(struct drm_connector *connector,
 	DP_MST_DEBUG("exit:\n");
 }
 
+static int dp_mst_connector_update_pps(struct drm_connector *connector,
+		char *pps_cmd, void *display)
+{
+	struct dp_display *dp_disp;
+	struct dp_mst_bridge *bridge;
+	struct dp_mst_private *mst;
+	int i, ret;
+
+	if (!display || !connector || !connector->encoder) {
+		DP_ERR("invalid params\n");
+		return -EINVAL;
+	}
+
+	bridge = to_dp_mst_bridge(connector->encoder->bridge);
+	dp_disp = display;
+
+	/* update pps on both connectors for super bridge */
+	if (bridge->id == MAX_DP_MST_DRM_BRIDGES) {
+		mst = dp_disp->dp_mst_prv_info;
+		for (i = 0; i < MAX_DP_MST_DRM_BRIDGES; i++) {
+			ret = dp_disp->update_pps(dp_disp,
+					mst->mst_bridge[i].connector, pps_cmd);
+			if (ret)
+				return ret;
+		}
+		return 0;
+	}
+
+	return dp_disp->update_pps(dp_disp, connector, pps_cmd);
+}
+
 /* DRM MST callbacks */
 
 static struct drm_connector *
@@ -2172,7 +2203,7 @@ dp_mst_add_connector(struct drm_dp_mst_topology_mgr *mgr,
 		.atomic_check = dp_mst_connector_atomic_check,
 		.config_hdr = dp_mst_connector_config_hdr,
 		.pre_destroy = dp_mst_connector_pre_destroy,
-		.update_pps = dp_connector_update_pps,
+		.update_pps = dp_mst_connector_update_pps,
 	};
 	struct dp_mst_private *dp_mst;
 	struct drm_device *dev;
@@ -2535,6 +2566,7 @@ dp_mst_drm_fixed_connector_init(struct dp_display *dp_display,
 		.atomic_check = dp_mst_connector_atomic_check,
 		.config_hdr = dp_mst_connector_config_hdr,
 		.pre_destroy = dp_mst_connector_pre_destroy,
+		.update_pps = dp_mst_connector_update_pps,
 	};
 	struct drm_device *dev;
 	struct drm_connector *connector;
