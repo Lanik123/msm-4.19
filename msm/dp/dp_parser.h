@@ -193,6 +193,7 @@ static inline char *dp_phy_aux_config_type_to_string(u32 cfg_type)
  * @gpio_aux_switch: presence GPIO AUX switch status
  * @dsc_feature_enable: DSC feature enable status
  * @fec_feature_enable: FEC feature enable status
+ * @dsc_continuous_pps: PPS sent every frame by HW
  * @max_dp_dsc_blks: maximum DSC blks for DP interface
  * @max_dp_dsc_input_width_pixs: Maximum input width for DSC block
  * @has_widebus: widebus (2PPC) feature eanble status
@@ -224,6 +225,7 @@ struct dp_parser {
 	bool no_aux_switch;
 	bool dsc_feature_enable;
 	bool fec_feature_enable;
+	bool dsc_continuous_pps;
 	bool has_widebus;
 	bool gpio_aux_switch;
 	u32 max_dp_dsc_blks;

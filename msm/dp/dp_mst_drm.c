@@ -2186,6 +2186,21 @@ static int dp_mst_connector_update_pps(struct drm_connector *connector,
 	return dp_disp->update_pps(dp_disp, connector, pps_cmd);
 }
 
+static int dp_mst_connector_post_init(struct drm_connector *connector,
+		void *display)
+{
+	struct dp_display *dp_display = display;
+	struct sde_connector *sde_conn = to_sde_connector(connector);
+
+	if (!dp_display || !connector)
+		return -EINVAL;
+
+	if (dp_display->dsc_cont_pps)
+		sde_conn->ops.update_pps = NULL;
+
+	return 0;
+}
+
 /* DRM MST callbacks */
 
 static struct drm_connector *
@@ -2193,7 +2208,7 @@ dp_mst_add_connector(struct drm_dp_mst_topology_mgr *mgr,
 		struct drm_dp_mst_port *port, const char *pathprop)
 {
 	static const struct sde_connector_ops dp_mst_connector_ops = {
-		.post_init  = NULL,
+		.post_init  = dp_mst_connector_post_init,
 		.detect     = dp_mst_connector_detect,
 		.get_modes  = dp_mst_connector_get_modes,
 		.mode_valid = dp_mst_connector_mode_valid,
@@ -2555,7 +2570,7 @@ dp_mst_drm_fixed_connector_init(struct dp_display *dp_display,
 			struct drm_encoder *encoder)
 {
 	static const struct sde_connector_ops dp_mst_connector_ops = {
-		.post_init  = NULL,
+		.post_init  = dp_mst_connector_post_init,
 		.set_info_blob = dp_mst_fixed_connnector_set_info_blob,
 		.detect     = dp_mst_fixed_connector_detect,
 		.get_modes  = dp_mst_connector_get_modes,

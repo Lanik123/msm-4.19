@@ -69,6 +69,7 @@ struct dp_display {
 	void *base_dp_panel;
 	bool is_sst_connected;
 	bool is_mst_supported;
+	bool dsc_cont_pps;
 	u32 max_pclk_khz;
 	void *dp_mst_prv_info;
 	bool force_bond_mode;

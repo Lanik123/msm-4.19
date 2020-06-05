@@ -752,10 +752,15 @@ static void dp_parser_dsc(struct dp_parser *parser)
 	if (rc || !parser->max_dp_dsc_input_width_pixs)
 		parser->dsc_feature_enable = false;
 
-	DP_DEBUG("dsc parsing successful. dsc:%d, blks:%d, width:%d\n",
+	parser->dsc_continuous_pps = of_property_read_bool(dev->of_node,
+			"qcom,dsc-continuous-pps");
+
+	DP_DEBUG("dsc parsing successful. dsc:%d, blks:%d\n",
 			parser->dsc_feature_enable,
-			parser->max_dp_dsc_blks,
-			parser->max_dp_dsc_input_width_pixs);
+			parser->max_dp_dsc_blks);
+	DP_DEBUG("width:%d cont_pps:%d\n",
+			parser->max_dp_dsc_input_width_pixs,
+			parser->dsc_continuous_pps);
 }
 
 static void dp_parser_fec(struct dp_parser *parser)
