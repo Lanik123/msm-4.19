@@ -437,6 +437,7 @@ int dp_connector_get_info(struct drm_connector *connector,
 		struct msm_display_info *info, void *data)
 {
 	struct dp_display *display = data;
+	const char *display_type = NULL;
 
 	if (!info || !display || !display->drm_dev) {
 		DP_ERR("invalid params\n");
@@ -444,6 +445,12 @@ int dp_connector_get_info(struct drm_connector *connector,
 	}
 
 	info->intf_type = DRM_MODE_CONNECTOR_DisplayPort;
+
+	display->get_display_type(display, &display_type);
+
+	if (display_type)
+		if (!strcmp(display_type, "primary"))
+			info->display_type = SDE_CONNECTOR_PRIMARY;
 
 	info->num_of_h_tiles = 1;
 	info->h_tile_instance[0] = 0;

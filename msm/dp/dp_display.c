@@ -3058,7 +3058,8 @@ static int dp_display_get_display_type(struct dp_display *dp_display,
 
 	dp = container_of(dp_display, struct dp_display_private, dp_display);
 
-	*display_type = dp->parser->display_type;
+	if (dp->parser)
+		*display_type = dp->parser->display_type;
 
 	return 0;
 }

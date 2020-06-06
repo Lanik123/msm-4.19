@@ -1872,7 +1872,38 @@ int dp_mst_connector_get_info(struct drm_connector *connector,
 	return rc;
 }
 
-int dp_mst_connector_get_mode_info(struct drm_connector *connector,
+static int dp_mst_fixed_connector_get_info(struct drm_connector *connector,
+		struct msm_display_info *info,
+		void *display)
+{
+	int rc;
+	struct dp_display *dp_display = display;
+	struct dp_mst_private *mst = dp_display->dp_mst_prv_info;
+	struct sde_connector *c_conn = to_sde_connector(connector);
+	const char *display_type = NULL;
+	int i;
+
+	DP_MST_DEBUG("enter:\n");
+	rc = dp_mst_connector_get_info(connector, info, display);
+	if (rc)
+		return rc;
+
+	for (i = 0; i < MAX_DP_MST_DRM_BRIDGES; i++) {
+		if (mst->mst_bridge[i].base.encoder != c_conn->encoder)
+			continue;
+		dp_display->mst_get_fixed_topology_display_type(dp_display,
+				mst->mst_bridge[i].id, &display_type);
+		if (display_type && !strcmp(display_type, "primary"))
+			info->display_type = SDE_CONNECTOR_PRIMARY;
+		break;
+	}
+
+	DP_MST_DEBUG("exit:\n");
+
+	return 0;
+}
+
+static int dp_mst_connector_get_mode_info(struct drm_connector *connector,
 		const struct drm_display_mode *drm_mode,
 		struct msm_mode_info *mode_info,
 		void *display,
@@ -2575,7 +2606,7 @@ dp_mst_drm_fixed_connector_init(struct dp_display *dp_display,
 		.detect     = dp_mst_fixed_connector_detect,
 		.get_modes  = dp_mst_connector_get_modes,
 		.mode_valid = dp_mst_connector_mode_valid,
-		.get_info   = dp_mst_connector_get_info,
+		.get_info   = dp_mst_fixed_connector_get_info,
 		.get_mode_info  = dp_mst_connector_get_mode_info,
 		.atomic_best_encoder = dp_mst_fixed_atomic_best_encoder,
 		.atomic_check = dp_mst_connector_atomic_check,
