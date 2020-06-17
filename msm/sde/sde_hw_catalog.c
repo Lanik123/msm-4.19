@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -405,6 +406,7 @@ enum {
 	WB_ID,
 	WB_XIN_ID,
 	WB_CLK_CTRL,
+	WB_CLK_STATUS,
 	WB_PROP_MAX,
 };
 
@@ -742,6 +744,8 @@ static struct sde_prop_type wb_prop[] = {
 	{WB_XIN_ID, "qcom,sde-wb-xin-id", false, PROP_TYPE_U32_ARRAY},
 	{WB_CLK_CTRL, "qcom,sde-wb-clk-ctrl", false,
 		PROP_TYPE_BIT_OFFSET_ARRAY},
+	{WB_CLK_STATUS, "qcom,sde-wb-clk-status", false,
+		PROP_TYPE_BIT_OFFSET_ARRAY},
 };
 
 static struct sde_prop_type vbif_prop[] = {
@@ -785,7 +789,7 @@ static struct sde_prop_type reg_dma_prop[REG_DMA_PROP_MAX] = {
 		"qcom,sde-reg-dma-broadcast-disabled", false, PROP_TYPE_BOOL},
 	[REG_DMA_XIN_ID] = {REG_DMA_XIN_ID,
 		"qcom,sde-reg-dma-xin-id", false, PROP_TYPE_U32},
-	[REG_DMA_CLK_CTRL] = {REG_DMA_XIN_ID,
+	[REG_DMA_CLK_CTRL] = {REG_DMA_CLK_CTRL,
 		"qcom,sde-reg-dma-clk-ctrl", false, PROP_TYPE_BIT_OFFSET_ARRAY},
 };
 
@@ -1602,11 +1606,17 @@ static int sde_sspp_parse_dt(struct device_node *np,
 
 		for (j = 0; j < sde_cfg->mdp_count; j++) {
 			sde_cfg->mdp[j].clk_ctrls[sspp->clk_ctrl].reg_off =
-				PROP_BITVALUE_ACCESS(prop_value,
-						SSPP_CLK_CTRL, i, 0);
+					PROP_BITVALUE_ACCESS(prop_value,
+					SSPP_CLK_CTRL, i, 0);
 			sde_cfg->mdp[j].clk_ctrls[sspp->clk_ctrl].bit_off =
-				PROP_BITVALUE_ACCESS(prop_value,
-						SSPP_CLK_CTRL, i, 1);
+					PROP_BITVALUE_ACCESS(prop_value,
+					SSPP_CLK_CTRL, i, 1);
+			sde_cfg->mdp[j].clk_status[sspp->clk_ctrl].reg_off =
+					PROP_BITVALUE_ACCESS(prop_value,
+					SSPP_CLK_STATUS, i, 0);
+			sde_cfg->mdp[j].clk_status[sspp->clk_ctrl].bit_off =
+					PROP_BITVALUE_ACCESS(prop_value,
+					SSPP_CLK_STATUS, i, 1);
 		}
 
 		SDE_DEBUG(
@@ -2120,6 +2130,12 @@ static int sde_wb_parse_dt(struct device_node *np, struct sde_mdss_cfg *sde_cfg)
 			sde_cfg->mdp[j].clk_ctrls[wb->clk_ctrl].bit_off =
 				PROP_BITVALUE_ACCESS(prop_value,
 						WB_CLK_CTRL, i, 1);
+			sde_cfg->mdp[j].clk_status[wb->clk_ctrl].reg_off =
+				PROP_BITVALUE_ACCESS(prop_value,
+						WB_CLK_STATUS, i, 0);
+			sde_cfg->mdp[j].clk_status[wb->clk_ctrl].bit_off =
+				PROP_BITVALUE_ACCESS(prop_value,
+						WB_CLK_STATUS, i, 1);
 		}
 
 		wb->format_list = sde_cfg->wb_formats;
