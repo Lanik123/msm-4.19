@@ -674,27 +674,6 @@ static int _sde_crtc_set_roi_v1(struct drm_crtc_state *state,
 	return 0;
 }
 
-static bool _sde_crtc_setup_is_3dmux_dsc(struct drm_crtc_state *state)
-{
-	int i;
-	struct sde_crtc_state *cstate;
-	uint64_t topology = SDE_RM_TOPOLOGY_NONE;
-
-	cstate = to_sde_crtc_state(state);
-
-	for (i = 0; i < cstate->num_connectors; i++) {
-		struct drm_connector *conn = cstate->connectors[i];
-
-		topology = sde_connector_get_topology_name(conn);
-		if ((topology == SDE_RM_TOPOLOGY_DUALPIPE_3DMERGE_DSC) ||
-				(topology ==
-				SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE_DSC))
-			return true;
-	}
-
-	return false;
-}
-
 static bool _sde_crtc_setup_is_quad_pipe(struct drm_crtc_state *state)
 {
 	int i;
@@ -859,6 +838,13 @@ static int _sde_crtc_set_lm_roi(struct drm_crtc *crtc,
 	const struct sde_rect *crtc_roi;
 	const struct sde_rect *lm_bounds;
 	struct sde_rect *lm_roi;
+	struct sde_kms *sde_kms;
+
+	sde_kms = _sde_crtc_get_kms(crtc);
+	if (!sde_kms) {
+		SDE_ERROR("invalid parameters\n");
+		return -EINVAL;
+	}
 
 	if (!crtc || !state || lm_idx >= ARRAY_SIZE(crtc_state->lm_bounds))
 		return -EINVAL;
@@ -882,7 +868,8 @@ static int _sde_crtc_set_lm_roi(struct drm_crtc *crtc,
 	 * hence, crtc roi must match the mixer dimensions.
 	 */
 	if (crtc_state->num_ds_enabled ||
-		_sde_crtc_setup_is_3dmux_dsc(state)) {
+		sde_rm_topology_is_group(&sde_kms->rm, state,
+				SDE_RM_TOPOLOGY_GROUP_3DMERGE_DSC)) {
 		if (memcmp(lm_roi, lm_bounds, sizeof(struct sde_rect))) {
 			SDE_ERROR("Unsupported: Dest scaler/3d mux DSC + PU\n");
 			return -EINVAL;
@@ -4725,8 +4712,16 @@ static int _sde_crtc_check_plane_layout(struct drm_crtc *crtc,
 	struct sde_plane_state *pstate;
 	enum sde_layout layout;
 	int layout_split;
+	struct sde_kms *kms;
 
-	if (!_sde_crtc_setup_is_quad_pipe(crtc_state))
+	kms = _sde_crtc_get_kms(crtc);
+	if (!kms || !kms->catalog) {
+		SDE_ERROR("invalid parameters\n");
+		return -EINVAL;
+	}
+
+	if (!sde_rm_topology_is_group(&kms->rm, crtc_state,
+			SDE_RM_TOPOLOGY_GROUP_QUADPIPE))
 		return 0;
 
 	drm_atomic_crtc_state_for_each_plane(plane, crtc_state) {
