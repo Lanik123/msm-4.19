@@ -45,6 +45,15 @@
 #define SDE_PSTATES_MAX (SDE_STAGE_MAX * 4)
 #define SDE_MULTIRECT_PLANE_MAX (SDE_STAGE_MAX * 2)
 
+/*
+ * if width of left rect and right rect added is greater than
+ * combined width of left and rect (x of left to x+w of right),
+ * then fsc planes are overlapping.
+ */
+#define FSC_PLANE_OVERLAP(left_rect, right_rect) ( \
+		((left_rect.w + right_rect.w) > \
+		(right_rect.x + right_rect.w - left_rect.x) ? 1 : 0))
+
 struct sde_crtc_custom_events {
 	u32 event;
 	int (*func)(struct drm_crtc *crtc, bool en,
@@ -830,6 +839,32 @@ static int _sde_crtc_check_autorefresh(struct drm_crtc *crtc,
 	return 0;
 }
 
+static bool  _sde_check_fsc_layer(struct drm_crtc_state *crtc_state)
+{
+	struct sde_format *format = NULL;
+	struct drm_plane *plane = NULL;
+	struct drm_plane_state *plane_state = NULL;
+
+	drm_atomic_crtc_state_for_each_plane(plane, crtc_state) {
+		plane_state = drm_atomic_get_existing_plane_state(
+				crtc_state->state, plane);
+		if (!plane_state)
+			continue;
+
+		format = to_sde_format(msm_framebuffer_format(
+				plane_state->fb));
+		if (!format) {
+			SDE_ERROR("invalid format\n");
+			return false;
+		}
+
+		if (SDE_FORMAT_IS_FSC(format))
+			return true;
+	}
+
+	return false;
+}
+
 static int _sde_crtc_set_lm_roi(struct drm_crtc *crtc,
 		struct drm_crtc_state *state, int lm_idx)
 {
@@ -1160,6 +1195,13 @@ static void _sde_crtc_program_lm_output_roi(struct drm_crtc *crtc)
 		cfg.out_height = lm_roi->h;
 		cfg.right_mixer = right_mixer;
 		cfg.flags = 0;
+
+		if (crtc_state->in_fsc_mode) {
+			cfg.out_width = (lm_roi->w / 3);
+			cfg.out_height = (lm_roi->h * 3);
+		}
+		SDE_DEBUG("LM out_w:%d out_h:%d fsc_mode:%d\n", cfg.out_width,
+				cfg.out_height, crtc_state->in_fsc_mode);
 		hw_lm->ops.setup_mixer_out(hw_lm, &cfg);
 	}
 }
@@ -4777,6 +4819,72 @@ static int _sde_crtc_check_plane_layout(struct drm_crtc *crtc,
 	return 0;
 }
 
+static int _sde_crtc_check_fsc_planes(struct drm_crtc *crtc,
+		struct drm_crtc_state *crtc_state)
+{
+	struct sde_format *format = NULL;
+	struct drm_plane *plane = NULL;
+	struct drm_plane_state *plane_state = NULL;
+	int fsc_plane_count = 0, non_fsc_plane_count = 0;
+	struct sde_rect fsc_rects[CRTC_DUAL_MIXERS];
+	struct sde_rect fsc_left_rect, fsc_right_rect;
+
+	drm_atomic_crtc_state_for_each_plane(plane, crtc_state) {
+		plane_state = drm_atomic_get_existing_plane_state(
+				crtc_state->state, plane);
+		if (!plane_state)
+			continue;
+
+		format = to_sde_format(msm_framebuffer_format(
+				plane_state->fb));
+		if (!format) {
+			SDE_ERROR("invalid format\n");
+			return -EINVAL;
+		} else if (SDE_FORMAT_IS_FSC(format)) {
+			fsc_plane_count++;
+			if (fsc_plane_count > CRTC_DUAL_MIXERS) {
+				SDE_ERROR("%d fsc planes unsupported",
+					fsc_plane_count);
+				SDE_ERROR("plane:%d\n", plane->base.id);
+				return -EINVAL;
+			}
+			/* Populate fsc_rects */
+			fsc_rects[fsc_plane_count-1].x = plane_state->crtc_x;
+			fsc_rects[fsc_plane_count-1].y = plane_state->crtc_y;
+			fsc_rects[fsc_plane_count-1].w = plane_state->crtc_w;
+			fsc_rects[fsc_plane_count-1].h = plane_state->crtc_h;
+		} else {
+			non_fsc_plane_count++;
+		}
+	}
+
+	if (fsc_rects[0].x > fsc_rects[1].x) {
+		fsc_right_rect = fsc_rects[0];
+		fsc_left_rect = fsc_rects[1];
+	} else {
+		fsc_right_rect = fsc_rects[1];
+		fsc_left_rect = fsc_rects[0];
+	}
+
+	if ((fsc_plane_count > 1) &&
+			FSC_PLANE_OVERLAP(fsc_left_rect, fsc_right_rect)) {
+		SDE_ERROR("fsc planes are overlapping,blending not allowed\n");
+		SDE_ERROR("left rect x:%d,y:%d,w:%d,h:%d\n",
+				fsc_left_rect.x, fsc_left_rect.y,
+				fsc_left_rect.w, fsc_left_rect.h);
+		SDE_ERROR("right rect x:%d, y:%d, w:%d, h:%d\n",
+				fsc_right_rect.x, fsc_right_rect.y,
+				fsc_right_rect.w, fsc_right_rect.h);
+		return -EINVAL;
+	} else if (fsc_plane_count && non_fsc_plane_count) {
+		SDE_ERROR("%d fsc and %d other planes detected together\n",
+				fsc_plane_count, non_fsc_plane_count);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 		struct drm_crtc_state *state)
 {
@@ -4798,6 +4906,7 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	dev = crtc->dev;
 	sde_crtc = to_sde_crtc(crtc);
 	cstate = to_sde_crtc_state(state);
+	cstate->in_fsc_mode = _sde_check_fsc_layer(state) ? true : false;
 
 	if (!state->enable || !state->active) {
 		SDE_DEBUG("crtc%d -> enable %d, active %d, skip atomic_check\n",
@@ -4849,6 +4958,14 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 		goto end;
 	}
 
+	if (cstate->in_fsc_mode) {
+		rc = _sde_crtc_check_fsc_planes(crtc, state);
+		if (rc) {
+			SDE_ERROR("crtc%d failed fsc planes check %d\n",
+					crtc->base.id, rc);
+			goto end;
+		}
+	}
 	_sde_crtc_setup_is_ppsplit(state);
 	_sde_crtc_setup_lm_bounds(crtc, state);
 
