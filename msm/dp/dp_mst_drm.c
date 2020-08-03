@@ -1879,7 +1879,6 @@ static int dp_mst_fixed_connector_get_info(struct drm_connector *connector,
 	int rc;
 	struct dp_display *dp_display = display;
 	struct dp_mst_private *mst = dp_display->dp_mst_prv_info;
-	struct sde_connector *c_conn = to_sde_connector(connector);
 	const char *display_type = NULL;
 	int i;
 
@@ -1889,7 +1888,7 @@ static int dp_mst_fixed_connector_get_info(struct drm_connector *connector,
 		return rc;
 
 	for (i = 0; i < MAX_DP_MST_DRM_BRIDGES; i++) {
-		if (mst->mst_bridge[i].base.encoder != c_conn->encoder)
+		if (mst->mst_bridge[i].fixed_connector != connector)
 			continue;
 		dp_display->mst_get_fixed_topology_display_type(dp_display,
 				mst->mst_bridge[i].id, &display_type);

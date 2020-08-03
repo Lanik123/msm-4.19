@@ -1028,6 +1028,14 @@ static int _sde_encoder_atomic_check_reserve(struct drm_encoder *drm_enc,
 			return ret;
 		}
 
+		ret = sde_connector_get_info(sde_conn_state->base.connector,
+				&sde_enc->disp_info);
+		if (ret) {
+			SDE_ERROR_ENC(sde_enc,
+				"failed to get disp info, rc = %d\n", ret);
+			return ret;
+		}
+
 		if (sde_conn_state->mode_info.comp_info.comp_type &&
 			sde_conn_state->mode_info.comp_info.comp_ratio >=
 					MSM_DISPLAY_COMPRESSION_RATIO_MAX) {
