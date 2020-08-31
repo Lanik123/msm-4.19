@@ -3785,6 +3785,7 @@ int dsi_panel_get_mode(struct dsi_panel *panel,
 			DSI_ERR("failed to parse panel timing, rc=%d\n", rc);
 			goto parse_fail;
 		}
+		mode->timing.fsc_mode = DSI_IS_FSC_PANEL(panel->fsc_rgb_order);
 
 		rc = dsi_panel_parse_dsc_params(mode, utils);
 		if (rc) {
