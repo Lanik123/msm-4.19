@@ -25,6 +25,10 @@ ifeq ($(CONFIG_ARCH_MSM8937), y)
 include $(srctree)/techpack/audio/config/sdm450auto.conf
 export
 endif
+ifeq ($(CONFIG_MACH_XIAOMI_ROLEX), y)
+CONFIG_SND_SOC_AW87319=y
+export
+endif
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE     += \
