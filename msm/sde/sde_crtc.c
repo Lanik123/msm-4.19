@@ -1129,7 +1129,7 @@ static void _sde_crtc_program_lm_output_roi(struct drm_crtc *crtc)
 	struct sde_crtc_state *crtc_state;
 	const struct sde_rect *lm_roi;
 	struct sde_hw_mixer *hw_lm;
-	bool right_mixer = false;
+	bool right_mixer;
 	int lm_idx;
 
 	if (!crtc)
@@ -1143,7 +1143,7 @@ static void _sde_crtc_program_lm_output_roi(struct drm_crtc *crtc)
 
 		lm_roi = &crtc_state->lm_roi[lm_idx];
 		hw_lm = sde_crtc->mixers[lm_idx].hw_lm;
-		right_mixer = (hw_lm->idx - LM_0) % CRTC_DUAL_MIXERS;
+		right_mixer = lm_idx % MAX_MIXERS_PER_LAYOUT;
 
 		SDE_EVT32(DRMID(crtc_state->base.crtc), lm_idx,
 				lm_roi->x, lm_roi->y, lm_roi->w, lm_roi->h,
@@ -1177,12 +1177,18 @@ static int pstate_cmp(const void *a, const void *b)
 	struct plane_state *pb = (struct plane_state *)b;
 	int rc = 0;
 	int pa_zpos, pb_zpos;
+	enum sde_layout pa_layout, pb_layout;
 
 	pa_zpos = sde_plane_get_property(pa->sde_pstate, PLANE_PROP_ZPOS);
 	pb_zpos = sde_plane_get_property(pb->sde_pstate, PLANE_PROP_ZPOS);
 
+	pa_layout = pa->sde_pstate->layout;
+	pb_layout = pb->sde_pstate->layout;
+
 	if (pa_zpos != pb_zpos)
 		rc = pa_zpos - pb_zpos;
+	else if (pa_layout != pb_layout)
+		rc = pa_layout - pb_layout;
 	else
 		rc = pa->drm_pstate->crtc_x - pb->drm_pstate->crtc_x;
 
@@ -1199,11 +1205,11 @@ static int _sde_crtc_validate_src_split_order(struct drm_crtc *crtc,
 		struct plane_state *pstates, int cnt)
 {
 	struct plane_state *prv_pstate, *cur_pstate;
+	enum sde_layout prev_layout, cur_layout;
 	struct sde_rect left_rect, right_rect;
 	struct sde_kms *sde_kms;
 	int32_t left_pid, right_pid;
 	int32_t stage;
-	int32_t left_layout, right_layout;
 	int i, rc = 0;
 
 	sde_kms = _sde_crtc_get_kms(crtc);
@@ -1215,16 +1221,11 @@ static int _sde_crtc_validate_src_split_order(struct drm_crtc *crtc,
 	for (i = 1; i < cnt; i++) {
 		prv_pstate = &pstates[i - 1];
 		cur_pstate = &pstates[i];
+		prev_layout = prv_pstate->sde_pstate->layout;
+		cur_layout = cur_pstate->sde_pstate->layout;
 
-		if (prv_pstate->stage != cur_pstate->stage)
-			continue;
-
-		left_layout = sde_plane_get_property(prv_pstate->sde_pstate,
-				PLANE_PROP_LAYOUT);
-		right_layout = sde_plane_get_property(cur_pstate->sde_pstate,
-				PLANE_PROP_LAYOUT);
-
-		if (left_layout != right_layout)
+		if (prv_pstate->stage != cur_pstate->stage ||
+				prev_layout != cur_layout)
 			continue;
 
 		stage = cur_pstate->stage;
@@ -1283,6 +1284,7 @@ static void _sde_crtc_set_src_split_order(struct drm_crtc *crtc,
 		struct plane_state *pstates, int cnt)
 {
 	struct plane_state *prv_pstate, *cur_pstate, *nxt_pstate;
+	enum sde_layout prev_layout, cur_layout;
 	struct sde_kms *sde_kms;
 	struct sde_rect left_rect, right_rect;
 	int32_t left_pid, right_pid;
@@ -1302,14 +1304,19 @@ static void _sde_crtc_set_src_split_order(struct drm_crtc *crtc,
 		prv_pstate = (i > 0) ? &pstates[i - 1] : NULL;
 		cur_pstate = &pstates[i];
 		nxt_pstate = ((i + 1) < cnt) ? &pstates[i + 1] : NULL;
+		prev_layout = prv_pstate->sde_pstate->layout;
+		cur_layout = cur_pstate->sde_pstate->layout;
 
-		if ((!prv_pstate) || (prv_pstate->stage != cur_pstate->stage)) {
+		if ((!prv_pstate) || (prv_pstate->stage != cur_pstate->stage)
+				|| (prev_layout != cur_layout)) {
 			/*
 			 * reset if prv or nxt pipes are not in the same stage
 			 * as the cur pipe
 			 */
 			if ((!nxt_pstate)
-				    || (nxt_pstate->stage != cur_pstate->stage))
+				    || (nxt_pstate->stage != cur_pstate->stage)
+					|| (nxt_pstate->sde_pstate->layout !=
+						cur_pstate->sde_pstate->layout))
 				cur_pstate->sde_pstate->pipe_order_flags = 0;
 
 			continue;
@@ -1426,8 +1433,7 @@ static void _sde_crtc_blend_setup_mixer(struct drm_crtc *crtc,
 		stage_cfg->multirect_index[pstate->stage][stage_idx] =
 					pstate->multirect_index;
 		stage_cfg->sspp_layout[pstate->stage][stage_idx] =
-				sde_plane_get_property(pstate,
-				PLANE_PROP_LAYOUT);
+				pstate->layout;
 
 		SDE_EVT32(DRMID(crtc), DRMID(plane), stage_idx,
 			sde_plane_pipe(plane) - SSPP_VIG0, pstate->stage,
@@ -4596,6 +4602,7 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 	u32 zpos_cnt = 0;
 	struct drm_crtc *crtc;
 	struct sde_kms *kms;
+	enum sde_layout layout;
 
 	crtc = &sde_crtc->base;
 	kms = _sde_crtc_get_kms(crtc);
@@ -4624,11 +4631,14 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 	}
 
 	z_pos = -1;
+	layout = SDE_LAYOUT_NONE;
 	for (i = 0; i < cnt; i++) {
 		/* reset counts at every new blend stage */
-		if (pstates[i].stage != z_pos) {
+		if (pstates[i].stage != z_pos ||
+				pstates[i].sde_pstate->layout != layout) {
 			zpos_cnt = 0;
 			z_pos = pstates[i].stage;
+			layout = pstates[i].sde_pstate->layout;
 		}
 
 		/* verify z_pos setting before using it */
@@ -4648,7 +4658,8 @@ static int _sde_crtc_check_zpos(struct drm_crtc_state *state,
 		else
 			pstates[i].sde_pstate->stage = z_pos;
 
-		SDE_DEBUG("%s: zpos %d", sde_crtc->name, z_pos);
+		SDE_DEBUG("%s: layout %d, zpos %d", sde_crtc->name, layout,
+				z_pos);
 	}
 	return rc;
 }
@@ -4737,18 +4748,20 @@ static int _sde_crtc_check_plane_layout(struct drm_crtc *crtc,
 		/* update layout if global coordinate is used */
 		if (layout == SDE_LAYOUT_NONE) {
 			if (plane_state->crtc_x >= layout_split) {
-				layout = SDE_LAYOUT_RIGHT;
 				plane_state->crtc_x -= layout_split;
 				pstate->layout_offset = layout_split;
+				pstate->layout = SDE_LAYOUT_RIGHT;
 			} else {
-				layout = SDE_LAYOUT_LEFT;
 				pstate->layout_offset = -1;
+				pstate->layout = SDE_LAYOUT_LEFT;
 			}
-			pstate->property_values[PLANE_PROP_LAYOUT].value =
-					layout;
-			SDE_DEBUG("plane%d updated: crtc_x=%d layout=%d\n",
-				DRMID(plane), plane_state->crtc_x, layout);
+		} else {
+			pstate->layout = layout;
+			pstate->layout_offset = 0;
 		}
+		SDE_DEBUG("plane%d updated: crtc_x=%d layout=%d\n",
+				DRMID(plane), plane_state->crtc_x,
+				pstate->layout);
 
 		/* check layout boundary */
 		if (CHECK_LAYER_BOUNDS(plane_state->crtc_x,
@@ -4756,7 +4769,7 @@ static int _sde_crtc_check_plane_layout(struct drm_crtc *crtc,
 			SDE_ERROR("invalid horizontal destination\n");
 			SDE_ERROR("x:%d w:%d hdisp:%d layout:%d\n",
 				plane_state->crtc_x, plane_state->crtc_w,
-				layout_split, layout);
+				layout_split, pstate->layout);
 			return -E2BIG;
 		}
 	}
