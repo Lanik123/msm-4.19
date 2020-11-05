@@ -1532,7 +1532,13 @@ static int dsi_display_debugfs_init(struct dsi_display *display)
 	char name[MAX_NAME_SIZE];
 	int i;
 
-	dir = debugfs_create_dir(display->name, NULL);
+	if (!strcmp(display->display_type, "primary")) {
+		dir = debugfs_create_dir(display->name, NULL);
+	} else {
+		snprintf(name, ARRAY_SIZE(name),
+				"%s_secondary", display->display_type);
+		dir = debugfs_create_dir(name, NULL);
+	}
 	if (IS_ERR_OR_NULL(dir)) {
 		rc = PTR_ERR(dir);
 		DSI_ERR("[%s] debugfs create dir failed, rc = %d\n",
