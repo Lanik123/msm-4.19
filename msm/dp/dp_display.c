@@ -2329,34 +2329,6 @@ end:
 	return 0;
 }
 
-
-
-static int dp_display_validate_dscs(struct msm_drm_private *priv,
-		struct dp_panel *dp_panel, struct drm_display_mode *mode,
-		struct dp_display_mode *dp_mode,
-		const struct msm_resource_caps_info *avail_res)
-{
-	int rc;
-	u32 num_dsc = 0;
-	bool dsc_capable = dp_mode->capabilities & DP_PANEL_CAPS_DSC;
-
-	if (!dp_panel->dsc_en || !dsc_capable)
-		return 0;
-
-	rc = msm_get_dsc_count(priv, mode->hdisplay, &num_dsc);
-	if (rc) {
-		DP_ERR("error getting dsc count. rc:%d\n", rc);
-		return rc;
-	}
-
-	if (num_dsc > avail_res->num_dsc) {
-		DP_DEBUG("num dsc:%d > available dsc:%d\n", num_dsc,
-				avail_res->num_dsc);
-		return -EPERM;
-	}
-	return 0;
-}
-
 static int dp_display_validate_topology(struct dp_display_private *dp,
 		struct dp_panel *dp_panel, struct drm_display_mode *mode,
 		struct dp_display_mode *dp_mode,
@@ -2364,9 +2336,10 @@ static int dp_display_validate_topology(struct dp_display_private *dp,
 {
 	int rc;
 	struct msm_drm_private *priv = dp->priv;
-	const u32 dual_lm = 2, quad_lm = 4;
+	const u32 dual = 2, quad = 4;
 	u32 num_lm = 0, num_dsc = 0, num_3dmux = 0;
 	bool dsc_capable = dp_mode->capabilities & DP_PANEL_CAPS_DSC;
+	u32 fps = dp_mode->timing.refresh_rate;
 
 	rc = msm_get_mixer_count(priv, mode, avail_res, &num_lm);
 	if (rc) {
@@ -2382,16 +2355,36 @@ static int dp_display_validate_topology(struct dp_display_private *dp,
 			DP_ERR("error getting dsc count. rc:%d\n", rc);
 			return rc;
 		}
+
+		/* Only DSCMERGE is supported on DP */
+		num_lm = max(num_lm, num_dsc);
+		num_dsc = max(num_lm, num_dsc);
+	} else {
+		num_3dmux = avail_res->num_3dmux;
 	}
 
-	/* filter out unsupported DP topologies */
-	if ((num_lm == dual_lm && (!num_3dmux && !num_dsc)) ||
-			(num_lm == quad_lm && (num_dsc != 4))) {
-		DP_DEBUG("invalid topology lm:%d dsc:%d 3dmux:%d intf:1\n",
-			num_lm, num_dsc, num_3dmux);
+	if (num_lm > avail_res->num_lm) {
+		DP_DEBUG("mode %sx%d is invalid, not enough lm %d %d\n",
+				mode->name, fps, num_lm, num_lm,
+				avail_res->num_lm);
+		return -EPERM;
+	} else if (num_dsc > avail_res->num_dsc) {
+		DP_DEBUG("mode %sx%d is invalid, not enough dsc %d %d\n",
+				mode->name, fps, num_dsc, avail_res->num_dsc);
+		return -EPERM;
+	} else if (!num_dsc && (num_lm == dual && !num_3dmux)) {
+		DP_DEBUG("mode %sx%d is invalid, not enough 3dmux %d %d\n",
+				mode->name, fps, num_3dmux,
+				avail_res->num_3dmux);
+		return -EPERM;
+	} else if (num_lm == quad && num_dsc != quad)  {
+		DP_DEBUG("mode %sx%d is invalid, DP topology lm:%d dsc:%d\n",
+				mode->name, fps, num_lm, num_dsc);
 		return -EPERM;
 	}
 
+	DP_DEBUG("mode %sx%d is valid, DP topology lm:%d dsc:%d 3dmux:%d\n",
+				mode->name, fps, num_lm, num_dsc, num_3dmux);
 	return 0;
 }
 
@@ -2411,7 +2404,6 @@ static enum drm_mode_status dp_display_validate_mode(
 	int hdis, vdis, vref, ar, _hdis, _vdis, _vref, _ar, rate;
 	struct dp_display_mode dp_mode;
 	bool dsc_en;
-	u32 num_lm = 0;
 	int rc = 0, tmds_max_clock = 0;
 
 	if (!dp_display || !mode || !panel ||
@@ -2464,23 +2456,6 @@ static enum drm_mode_status dp_display_validate_mode(
 				tmds_max_clock);
 		goto end;
 	}
-
-	rc = msm_get_mixer_count(dp->priv, mode, avail_res, &num_lm);
-	if (rc) {
-		DP_ERR("error getting mixer count. rc:%d\n", rc);
-		goto end;
-	}
-
-	if (num_lm > avail_res->num_lm) {
-		DP_DEBUG("num lm:%d > available lm:%d\n", num_lm,
-				avail_res->num_lm);
-		return -EPERM;
-	}
-
-	rc = dp_display_validate_dscs(dp->priv, panel, mode, &dp_mode,
-			avail_res);
-	if (rc)
-		goto end;
 
 	rc = dp_display_validate_topology(dp, dp_panel, mode,
 			&dp_mode, avail_res);
@@ -2548,6 +2523,8 @@ verify_default:
 	mode_status = MODE_OK;
 end:
 	mutex_unlock(&dp->session_lock);
+	DP_DEBUG("[%s] mode is %s\n", mode->name,
+			(mode_status == MODE_OK) ? "valid" : "invalid");
 	return mode_status;
 }
 
