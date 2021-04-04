@@ -2243,6 +2243,12 @@ void resume_console(void)
 	console_unlock();
 }
 
+void emergency_unlock_console(void)
+{
+	console_suspended = 0;
+}
+EXPORT_SYMBOL(emergency_unlock_console);
+
 #ifdef CONFIG_CONSOLE_FLUSH_ON_HOTPLUG
 
 /**
