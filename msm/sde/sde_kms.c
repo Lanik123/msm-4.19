@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -1427,6 +1427,9 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 	void *display, *connector;
 	int i, max_encoders;
 	int rc = 0;
+	u32 dsc_count = 0, mixer_count = 0;
+	u32 max_dp_dsc_count, max_dp_mixer_count;
+
 
 	if (!dev || !priv || !sde_kms) {
 		SDE_ERROR("invalid argument(s)\n");
@@ -1493,8 +1496,15 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 			sde_connector_destroy(connector);
 			sde_encoder_destroy(encoder);
 		}
+
+		dsc_count += info.dsc_count;
+		mixer_count += info.lm_count;
 	}
 
+	max_dp_mixer_count = sde_kms->catalog->mixer_count > mixer_count ?
+				sde_kms->catalog->mixer_count - mixer_count : 0;
+	max_dp_dsc_count = sde_kms->catalog->dsc_count > dsc_count ?
+				sde_kms->catalog->dsc_count - dsc_count : 0;
 
 	/* wb */
 	for (i = 0; i < sde_kms->wb_display_count &&
@@ -1559,7 +1569,8 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 			continue;
 		}
 
-		rc = dp_drm_bridge_init(display, encoder);
+		rc = dp_drm_bridge_init(display, encoder,
+				max_dp_mixer_count, max_dp_dsc_count);
 		if (rc) {
 			SDE_ERROR("dp bridge %d init failed, %d\n", i, rc);
 			sde_encoder_destroy(encoder);
