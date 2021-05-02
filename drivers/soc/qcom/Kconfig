@@ -497,6 +497,13 @@ config QCOM_DCC_V2
          driver provides interface to configure DCC block and read back
          captured data from DCC's internal SRAM.
 
+config QCOM_DCC
+        bool "QCOM Data Capture and Compare enigne support"
+        help
+          This option enables driver for Data Capture and Compare engine. DCC
+          driver provides interface to configure DCC block and read back
+          captured data from DCC's internal SRAM.
+
 config QCOM_EUD
 	tristate "QTI Embedded USB Debugger (EUD)"
 	depends on ARCH_QCOM
