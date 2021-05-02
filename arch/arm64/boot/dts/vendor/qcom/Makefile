@@ -336,6 +336,8 @@ else
 	sda429-cdp.dtb
 endif
 
+dtb-$(CONFIG_MACH_XIAOMI_ROLEX) += msm8917-rolex-overlay.dtb
+
 always		:= $(dtb-y)
 subdir-y	:= $(dts-dirs)
 clean-files    := *.dtb *.dtbo
