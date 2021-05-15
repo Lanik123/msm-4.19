@@ -432,8 +432,8 @@
 	};
 
 	cpu-pmu {
-		compatible = "arm,armv8-pmuv3";
-		interrupts = <1 7 IRQ_TYPE_LEVEL_HIGH>;
+		compatible = "arm,cortex-a53-pmu";
+		interrupts = <1 7 0xff00>;
 	};
 
 	slim_msm: slim@c140000 {
@@ -590,7 +590,7 @@
 	apsscc: qcom,clock-cpu@b011050 {
 		compatible = "qcom,cpu-clock-qm215";
 		reg =   <0xb011050 0x8>,
-			<0xb016000 0x34>,
+			<0xb016000 0x00040>,
 			<0x00a412c 0x8>;
 		reg-names = "apcs-c1-rcg-base",
 			"apcs_pll", "efuse";
