@@ -298,6 +298,7 @@ struct sde_encoder_irq {
  *				programming ROT and MDP fetch start
  * @frame_trigger_mode:		frame trigger mode indication for command
  *				mode display
+ * @dsc_4hs_merge_en:		enable dsc 4hs merge.
  */
 struct sde_encoder_phys {
 	struct drm_encoder *parent;
@@ -339,6 +340,7 @@ struct sde_encoder_phys {
 	bool in_clone_mode;
 	int vfp_cached;
 	enum frame_trigger_mode_type frame_trigger_mode;
+	bool dsc_4hs_merge_en;
 };
 
 static inline int sde_encoder_phys_inc_pending(struct sde_encoder_phys *phys)
@@ -619,7 +621,8 @@ static inline enum sde_3d_blend_mode sde_encoder_helper_get_3d_blend_mode(
 	if (((phys_enc->split_role == ENC_ROLE_MASTER) ||
 			(phys_enc->split_role == ENC_ROLE_SLAVE)) &&
 			((topology == SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE) ||
-			(topology == SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE_DSC)))
+			(topology == SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE_DSC) ||
+			(topology == SDE_RM_TOPOLOGY_QUADPIPE_DSC4HSMERGE)))
 		return BLEND_3D_H_ROW_INT;
 
 	return BLEND_3D_NONE;
