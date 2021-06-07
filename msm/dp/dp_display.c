@@ -1821,7 +1821,8 @@ static int dp_display_set_mode(struct dp_display *dp_display, void *panel,
 		mode->timing.bpp = default_bpp;
 
 	mode->timing.bpp = dp->panel->get_mode_bpp(dp->panel,
-			mode->timing.bpp, mode->timing.pixel_clk_khz);
+			mode->timing.bpp, mode->timing.pixel_clk_khz,
+			mode->timing.comp_info.comp_ratio);
 
 	dp_panel->pinfo = mode->timing;
 	mutex_unlock(&dp->session_lock);
