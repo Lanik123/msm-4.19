@@ -15,7 +15,7 @@
 
 #include "msm8917.dtsi"
 #include "msm8917-qrd.dtsi"
-#include "msm8937-mdss-panels.dtsi"
+#include "msm8917-mdss-panels.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. MSM8917-PMI8937 QRD SKU5";
