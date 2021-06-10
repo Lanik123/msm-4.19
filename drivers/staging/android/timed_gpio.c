@@ -1,6 +1,7 @@
 /* drivers/misc/timed_gpio.c
  *
  * Copyright (C) 2008 Google, Inc.
+ * Copyright (C) 2018 XiaoMi, Inc.
  * Author: Mike Lockwood <lockwood@android.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -22,10 +23,15 @@
 #include <linux/gpio.h>
 #include <linux/ktime.h>
 
+#include <linux/of_platform.h>
+#include <linux/of_gpio.h>
 #include "timed_output.h"
 #include "timed_gpio.h"
 
-struct timed_gpio_data {
+#define GPIO_VIB_NAME "gpio-vibrator"
+
+struct timed_gpio_data
+{
 	struct timed_output_dev dev;
 	struct hrtimer timer;
 	spinlock_t lock;
@@ -34,6 +40,22 @@ struct timed_gpio_data {
 	u8 active_low;
 };
 
+struct gpio_vib
+{
+	const char *name;
+	unsigned 	gpio;
+	int 		max_timeout;
+	unsigned	active_low:1;
+};
+
+static void delete_gpio_vib(struct timed_gpio_data *vib)
+{
+	if (!gpio_is_valid(vib->gpio))
+		return;
+	timed_output_dev_unregister(&vib->dev);
+	gpio_free(vib->gpio);
+}; 
+
 static enum hrtimer_restart gpio_timer_func(struct hrtimer *timer)
 {
 	struct timed_gpio_data *data =
@@ -41,7 +63,7 @@ static enum hrtimer_restart gpio_timer_func(struct hrtimer *timer)
 
 	gpio_direction_output(data->gpio, data->active_low ? 1 : 0);
 	return HRTIMER_NORESTART;
-}
+};
 
 static int gpio_get_time(struct timed_output_dev *dev)
 {
@@ -56,7 +78,7 @@ static int gpio_get_time(struct timed_output_dev *dev)
 	t = hrtimer_get_remaining(&data->timer);
 
 	return ktime_to_ms(t);
-}
+};
 
 static void gpio_enable(struct timed_output_dev *dev, int value)
 {
@@ -73,69 +95,109 @@ static void gpio_enable(struct timed_output_dev *dev, int value)
 	if (value > 0) {
 		if (value > data->max_timeout)
 			value = data->max_timeout;
-
+			printk("max_timeout is %d\n", data->max_timeout);
 		hrtimer_start(&data->timer,
 			      ktime_set(value / 1000, (value % 1000) * 1000000),
 			      HRTIMER_MODE_REL);
 	}
 
 	spin_unlock_irqrestore(&data->lock, flags);
-}
+};
+
+static int create_gpio_vib(const struct gpio_vib *template,
+	struct timed_gpio_data *gpio_dat, struct device *parent)
+{
+	int ret;
+	gpio_dat->gpio = template->gpio;
+	hrtimer_init(&gpio_dat->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	gpio_dat->timer.function = gpio_timer_func;
+	spin_lock_init(&gpio_dat->lock);
+	gpio_dat->dev.name = template->name;
+	gpio_dat->dev.get_time = gpio_get_time;
+	gpio_dat->dev.enable = gpio_enable;
+	ret = gpio_request(gpio_dat->gpio, gpio_dat->dev.name);
+	if (ret < 0)
+		return 0;
+	ret = timed_output_dev_register(&gpio_dat->dev);
+	if (ret < 0) {
+		gpio_free(gpio_dat->gpio);
+		return 0;
+	};
+	gpio_dat->max_timeout = template->max_timeout;
+	gpio_dat->active_low = template->active_low;
+	gpio_direction_output(gpio_dat->gpio, gpio_dat->active_low);
+	return 0;
+};
+
+struct gpio_vibs_priv {
+	int num_vibs;
+	struct timed_gpio_data vibs[];
+};
+
+static inline int sizeof_gpio_vibs_priv(int num_vibs)
+{
+	return sizeof(struct gpio_vibs_priv) +
+		(sizeof(struct timed_gpio_data) * num_vibs);
+};
+
+#define DEFAULT_TIME_MAX_MS 50000
+static struct gpio_vibs_priv *gpio_vibs_create_of(struct platform_device *pdev)
+{
+	struct device_node *np = pdev->dev.of_node, *child;
+	int count, ret;
+	unsigned timerv;
+	struct gpio_vibs_priv *priv;
+	count = of_get_child_count(np);
+	if (!count)
+		return ERR_PTR(-ENODEV);
+
+	for_each_child_of_node(np, child)
+		if (of_get_gpio(child, 0) == -EPROBE_DEFER)
+			return ERR_PTR(-EPROBE_DEFER);
+
+	priv = devm_kzalloc(&pdev->dev, sizeof_gpio_vibs_priv(count),
+			GFP_KERNEL);
+	if (!priv)
+		return ERR_PTR(-ENOMEM);
+
+	for_each_child_of_node(np, child) {
+		struct gpio_vib vib = {};
+		enum of_gpio_flags flags;
+		vib.gpio = of_get_gpio_flags(child, 0, &flags);
+		vib.active_low = flags & OF_GPIO_ACTIVE_LOW;
+		vib.name = of_get_property(child, "label", NULL) ? : child->name;
+		ret = of_property_read_u32(child, "max_timeout", &timerv);
+		if (!ret) {
+			vib.max_timeout = timerv;
+			printk("wingtech vib.max_timeout = %d\n", vib.max_timeout);
+		} else{
+			vib.max_timeout = DEFAULT_TIME_MAX_MS;
+			printk("wingtech vib.max_timeout used default = %d, ret=%d\n", vib.max_timeout, ret);
+		}
+
+		ret = create_gpio_vib(&vib, &priv->vibs[priv->num_vibs++],
+				      &pdev->dev);
+		if (ret < 0) {
+			of_node_put(child);
+			goto err;
+		}
+	}
+	return priv;
+	err:
+	for (count = priv->num_vibs - 2; count >= 0; count--)
+		delete_gpio_vib(&priv->vibs[count]);
+	return ERR_PTR(-ENODEV);
+};
 
 static int timed_gpio_probe(struct platform_device *pdev)
 {
-	struct timed_gpio_platform_data *pdata = pdev->dev.platform_data;
-	struct timed_gpio *cur_gpio;
-	struct timed_gpio_data *gpio_data, *gpio_dat;
-	int i, ret;
-
-	if (!pdata)
-		return -EBUSY;
-
-	gpio_data = devm_kcalloc(&pdev->dev, pdata->num_gpios,
-				 sizeof(*gpio_data), GFP_KERNEL);
-	if (!gpio_data)
-		return -ENOMEM;
-
-	for (i = 0; i < pdata->num_gpios; i++) {
-		cur_gpio = &pdata->gpios[i];
-		gpio_dat = &gpio_data[i];
-
-		hrtimer_init(&gpio_dat->timer, CLOCK_MONOTONIC,
-			     HRTIMER_MODE_REL);
-		gpio_dat->timer.function = gpio_timer_func;
-		spin_lock_init(&gpio_dat->lock);
-
-		gpio_dat->dev.name = cur_gpio->name;
-		gpio_dat->dev.get_time = gpio_get_time;
-		gpio_dat->dev.enable = gpio_enable;
-		ret = gpio_request(cur_gpio->gpio, cur_gpio->name);
-		if (ret < 0)
-			goto err_out;
-		ret = timed_output_dev_register(&gpio_dat->dev);
-		if (ret < 0) {
-			gpio_free(cur_gpio->gpio);
-			goto err_out;
-		}
-
-		gpio_dat->gpio = cur_gpio->gpio;
-		gpio_dat->max_timeout = cur_gpio->max_timeout;
-		gpio_dat->active_low = cur_gpio->active_low;
-		gpio_direction_output(gpio_dat->gpio, gpio_dat->active_low);
-	}
-
-	platform_set_drvdata(pdev, gpio_data);
-
+	struct gpio_vibs_priv *priv;
+	priv = gpio_vibs_create_of(pdev);
+		if (IS_ERR(priv))
+			return PTR_ERR(priv);
+	platform_set_drvdata(pdev, priv);
 	return 0;
-
-err_out:
-	while (--i >= 0) {
-		timed_output_dev_unregister(&gpio_data[i].dev);
-		gpio_free(gpio_data[i].gpio);
-	}
-
-	return ret;
-}
+};
 
 static int timed_gpio_remove(struct platform_device *pdev)
 {
@@ -146,16 +208,23 @@ static int timed_gpio_remove(struct platform_device *pdev)
 	for (i = 0; i < pdata->num_gpios; i++) {
 		timed_output_dev_unregister(&gpio_data[i].dev);
 		gpio_free(gpio_data[i].gpio);
-	}
+	};
 
 	return 0;
-}
+};
+
+static struct of_device_id vib_match_table[] = {
+	{	.compatible = "gpio-vibrator",
+	},
+	{}
+};
 
 static struct platform_driver timed_gpio_driver = {
 	.probe		= timed_gpio_probe,
 	.remove		= timed_gpio_remove,
 	.driver		= {
-		.name		= TIMED_GPIO_NAME,
+		.name		= GPIO_VIB_NAME,
+		.of_match_table = vib_match_table,
 	},
 };
 
