@@ -235,6 +235,8 @@
 	cpu-vdd-supply = <&apc_vreg_corner>;
 	vdd_dig_ao-supply = <&pm8953_s2_level_ao>;
 	vdd_hf_pll-supply = <&pm8953_l7_ao>;
+	vdd_sr2_dig_ao-supply = <&pm8953_s2_level_ao>;
+	vdd_sr2_pll-supply = <&pm8953_l7_ao>;
 	qcom,speed0-bin-v0-c0 =
 		<          0 0>,
 		<  768000000 1>,
