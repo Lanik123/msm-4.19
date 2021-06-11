@@ -593,7 +593,7 @@
 			<0xb016000 0x34>,
 			<0x00a412c 0x8>;
 		reg-names = "apcs-c1-rcg-base",
-			"apcs_pll", "efuse";
+			"apcs_pll1", "efuse";
 		cpu-vdd-supply = <&apc_vreg_corner>;
 		vdd_dig_ao-supply = <&pm8937_s2_level_ao>;
 		vdd_hf_pll-supply = <&pm8937_l7_ao>;
