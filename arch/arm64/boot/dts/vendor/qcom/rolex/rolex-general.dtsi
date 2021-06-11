@@ -1,0 +1,257 @@
+/*
+ * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/* msm8917 */ 
+&firmware {
+	android {
+		/delete-node/ vbmeta;
+		fstab {
+			vendor {
+				dev = "/dev/block/platform/soc/7824900.sdhci/by-name/cust";
+				mnt_flags = "ro,noatime";
+                fsmgr_flags = "wait";
+				status = "ok";
+			};
+
+			system {
+				compatible = "android,system";
+				dev = "/dev/block/platform/soc/7824900.sdhci/by-name/system";
+				type = "ext4";
+				mnt_flags = "ro,noatime";
+				fsmgr_flags = "wait";
+				status = "ok";
+			};
+		};
+	};
+};
+ 
+&soc {
+    /delete-node/ qseecom@85b00000;
+	qcom_seecom: qseecom@84A00000 {
+		compatible = "qcom,qseecom";
+		reg = <0x84A00000 0x1900000>;
+		reg-names = "secapp-region";
+		qcom,hlos-num-ce-hw-instances = <1>;
+		qcom,hlos-ce-hw-instance = <0>;
+		qcom,qsee-ce-hw-instance = <0>;
+		qcom,disk-encrypt-pipe-pair = <2>;
+		qcom,support-fde;
+		qcom,msm-bus,name = "qseecom-noc";
+		qcom,msm-bus,num-cases = <4>;
+		qcom,msm-bus,num-paths = <1>;
+		qcom,support-bus-scaling;
+		qcom,msm-bus,vectors-KBps =
+			<55 512 0 0>,
+			<55 512 0 0>,
+			<55 512 120000 1200000>,
+			<55 512 393600 3936000>;
+		clocks = <&gcc CRYPTO_CLK_SRC>,
+		       <&gcc GCC_CRYPTO_CLK>,
+		       <&gcc GCC_CRYPTO_AHB_CLK>,
+		       <&gcc GCC_CRYPTO_AXI_CLK>;
+		clock-names = "core_clk_src", "core_clk",
+			"iface_clk", "bus_clk";
+		qcom,ce-opp-freq = <100000000>;
+	};
+
+	restart@4ab000 {
+		qcom,force-warm-reboot;
+	};
+};
+
+/* msm8917-pmi8937-qrd-sku5 */ 
+&i2c_5 {
+	status = "ok";
+	smb358_otg_vreg: smb358-charger@57 {
+		compatible = "qcom,smb358-charger";
+		reg = <0x57>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <61 0x0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&smb_int_default>;
+		qcom,irq-gpio = <&tlmm 61 0x0>;
+		qcom,float-voltage-mv = <4400>;
+		qcom,recharge-mv = <50>;
+		regulator-name = "smb358_otg_vreg";
+		qcom,bms-psy-name = "bms";
+		qcom,chg-inhibit-disabled;	
+		qcom,chg-vadc = <&pm8937_vadc>;
+		qcom,iterm-ma = <150>;
+		status = "ok";
+	};
+
+	cw2015: cw2015@62 {
+		compatible = "cellwise,cw2015";
+		reg = <0x62>;
+		vdd-supply = <&pm8937_l17>;
+		vcc_i2c-supply = <&pm8937_l5>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <86 8>;
+	};
+};
+
+&usb_otg {
+	qcom,hsusb-otg-mode = <3>;
+	interrupts = <0 134 0>,<0 140 0>,<0 136 0>;
+	interrupt-names = "core_irq", "async_irq", "phy_irq";
+	vbus_otg-supply = <&smb358_otg_vreg>;
+	extcon = <&smb358_otg_vreg>;
+	qcom,hsusb-otg-phy-init-seq = <0x39 0x81 0x37 0x82 0xffffffff>;
+};
+
+&pm8937_vadc{
+	chan@13 {
+		label = "mpp4";
+		reg = <0x13>;
+		qcom,calibration-type = "absolute";
+		qcom,scale-function = <0>;
+	};
+};
+
+&pm8937_gpios {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_pwr_en_default &batt_id_pin>;
+	pwm_pwr_en_default: pm8937_gpio8 {
+		pins = "gpio8";
+		function = "dtest2";
+		output-low;
+		bias-disable;
+		qcom,drive-strength = <2>;
+		status = "okay";
+	};
+
+	batt_id_pin: pm8937_gpio5 {
+		pins = "gpio5";
+		function = "normal";
+		input-enable;
+		bias-pull-up;
+		qcom,pull-up-strength = <1>;
+		qcom,drive-strength = <2>;
+		status = "okay";
+	};
+};
+
+&soc {
+	i2c@78b6000 { /* i2c 2 */
+		aw2013@45 { /*blink */
+			compatible = "awinc,aw2013";
+			reg = <0x45>;
+			rgb_led-supply = <&pm8937_l10>;
+
+			red {
+				label = "red";
+				linux,default-trigger = "battery-red";
+				default-state = "off";
+				retain-state-suspended;
+			};
+
+			green {
+				label = "green";
+				linux,default-trigger = "battery-green";
+				default-state = "off";
+				retain-state-suspended;
+			};
+
+			blue {
+				label = "blue";
+				linux,default-trigger = "battery-blue";
+				default-state = "off";
+				retain-state-suspended;
+			};
+
+			white {
+				label = "white";
+				linux,default-trigger = "none";
+				default-state = "off";
+				retain-state-suspended;
+			};
+
+			yellow {
+				label = "yellow";
+				linux,default-trigger = "none";
+				default-state = "off";
+				retain-state-suspended;
+			};
+
+			cyan {
+				label = "cyan";
+				linux,default-trigger = "none";
+				default-state = "off";
+				retain-state-suspended;
+			};
+
+			purple {
+				label = "purple";
+				linux,default-trigger = "none";
+				default-state = "off";
+				retain-state-suspended;
+			};
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&gpio_led_off>;
+		infred {
+			gpios = <&tlmm 45 0>;
+			label = "infrared";
+			linux,default-trigger = "infra-red";
+			default-state = "off";
+			retain-state-suspended;
+		};
+	};
+
+	gpio-vib {
+		compatible = "gpio-vibrator";
+		vibrator {
+			gpios = <&tlmm 97 0>;
+			label = "vibrator";
+			max_timeout = <50000>;
+		};
+	};
+
+	led_flash0: qcom,camera-flash {
+		cell-index = <0>;
+		compatible = "qcom,camera-flash";
+		qcom,flash-type = <1>;
+	};
+};
+
+/* msm8917-qrd */ 
+&sdhc_1 {
+    qcom,vdd-always-on;
+};
+
+/* Fix iommu */
+&apps_iommu {
+	qcom,no-aarch64;
+};
+
+/* Missing clock-frequency property */
+&CPU0 {
+	clock-frequency = <1401000000>;
+};
+
+&CPU1 {
+	clock-frequency = <1401000000>;
+};
+
+&CPU2 {
+	clock-frequency = <1401000000>;
+};
+
+&CPU3 {
+	clock-frequency = <1401000000>;
+};
