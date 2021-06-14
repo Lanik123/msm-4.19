@@ -112,6 +112,22 @@ static void power_supply_changed_work(struct work_struct *work)
 	spin_unlock_irqrestore(&psy->changed_lock, flags);
 }
 
+int power_supply_get_battery_charge_state(struct power_supply *psy)
+{
+	union power_supply_propval ret = {0,};
+	if (!psy) {
+		 pr_err("power supply is NULL\n");
+	}
+
+	if (psy->desc->get_property) 
+		psy->desc->get_property(psy, POWER_SUPPLY_PROP_PRESENT, &ret);
+		
+	pr_debug("online:%d\n", ret.intval);
+
+	return ret.intval;
+}
+EXPORT_SYMBOL(power_supply_get_battery_charge_state);
+
 void power_supply_changed(struct power_supply *psy)
 {
 	unsigned long flags;

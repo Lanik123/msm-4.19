@@ -43,6 +43,7 @@
 #define OTHER_CTRL_REG			0x9
 #define FAULT_INT_REG			0xC
 #define STATUS_INT_REG			0xD
+#define OTG_CONTROL_REG  		0xA
 
 /* Command registers */
 #define CMD_A_REG			0x30
@@ -85,6 +86,8 @@
 #define CHG_CTRL_APSD_EN_MASK			BIT(2)
 #define CHG_ITERM_MASK				0x07
 #define CHG_PIN_CTRL_USBCS_REG_BIT		0x0
+#define OTG_CURRENT_CONTROL_BIT2     	BIT(2)
+#define OTG_CURRENT_CONTROL_BIT3     	BIT(3)
 /* This is to select if use external pin EN to control CHG */
 #define CHG_PIN_CTRL_CHG_EN_LOW_PIN_BIT		SMB358_MASK(6, 5)
 #define CHG_PIN_CTRL_CHG_EN_LOW_REG_BIT		0x0
@@ -171,8 +174,12 @@
 #define SMB358_FAST_CHG_MAX_MA		2000
 #define SMB358_FAST_CHG_SHIFT		5
 #define SMB_FAST_CHG_CURRENT_MASK	0xE0
-#define SMB358_DEFAULT_BATT_CAPACITY	50
+#define SMB358_DEFAULT_BATT_CAPACITY	10
 #define SMB358_BATT_GOOD_THRE_2P5	0x1
+
+extern struct device_node *of_batterydata_get_best_profile(
+		const struct device_node *batterydata_container_node,
+		const char *psy_name,  const char  *batt_type);
 
 enum {
 	USER		= BIT(0),
@@ -199,7 +206,7 @@ static const unsigned int smb358_extcon_cable[] = {
 
 struct smb358_iio {
 	struct iio_channel	*batt_id_therm;
-	struct iio_channel	*vbat_sns;
+	struct iio_channel	*batt_therm;
 };
 
 struct smb358_charger {
@@ -268,6 +275,7 @@ struct smb358_charger {
 	struct regulator	*vcc_i2c;
 	struct extcon_dev       *extcon;
 	u32			 cable_id;
+	const char 				*battery_type;
 	enum power_supply_type  charger_type;
 };
 
@@ -574,6 +582,12 @@ static int smb358_chg_otg_regulator_enable(struct regulator_dev *rdev)
 	if (rc)
 		dev_err(chip->dev, "Couldn't enable OTG mode rc=%d, reg=%2x\n",
 								rc, CMD_A_REG);
+
+	rc = smb358_masked_write(chip, OTG_CONTROL_REG, OTG_CURRENT_CONTROL_BIT2,
+							OTG_CURRENT_CONTROL_BIT2);
+	if (rc)
+		dev_err(chip->dev, "Couldn't enable OTG current control rc=%d, reg=%2x\n",
+								rc, OTG_CONTROL_REG);
 	return rc;
 }
 
@@ -922,6 +936,9 @@ static enum power_supply_property smb358_battery_properties[] = {
 	POWER_SUPPLY_PROP_MODEL_NAME,
 	POWER_SUPPLY_PROP_TEMP,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+	POWER_SUPPLY_PROP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_BATTERY_TYPE,
+	POWER_SUPPLY_PROP_RESISTANCE_ID,
 };
 
 static int smb358_get_prop_batt_status(struct smb358_charger *chip)
@@ -962,6 +979,10 @@ static int smb358_get_prop_batt_capacity(struct smb358_charger *chip)
 	if (chip->fake_battery_soc >= 0)
 		return chip->fake_battery_soc;
 
+#ifdef CONFIG_MACH_XIAOMI_ROLEX
+	if (!chip->bms_psy)
+		chip->bms_psy = power_supply_get_by_name("rk-bat");
+#endif
 	if (chip->bms_psy) {
 		power_supply_get_property(chip->bms_psy,
 				POWER_SUPPLY_PROP_CAPACITY, &ret);
@@ -970,6 +991,20 @@ static int smb358_get_prop_batt_capacity(struct smb358_charger *chip)
 
 	pr_debug("return default capacity\n");
 	return SMB358_DEFAULT_BATT_CAPACITY;
+}
+
+static int get_prop_current_now(struct smb358_charger *chip)
+{
+	union power_supply_propval ret = {0,};
+	if (chip->bms_psy) {
+		power_supply_get_property(chip->bms_psy,
+			POWER_SUPPLY_PROP_CURRENT_NOW, &ret);
+		dev_dbg(chip->dev, "xujismbcur = %d\n", ret.intval);
+		return ret.intval;
+	} else {
+		dev_dbg(chip->dev, "No BMS supply registered return 0\n");
+	}
+	return 1000;
 }
 
 static int smb358_get_prop_charge_type(struct smb358_charger *chip)
@@ -990,7 +1025,7 @@ static int smb358_get_prop_charge_type(struct smb358_charger *chip)
 	if (reg == STATUS_C_FAST_CHARGING)
 		return POWER_SUPPLY_CHARGE_TYPE_FAST;
 	else if (reg == STATUS_C_TAPER_CHARGING)
-		return POWER_SUPPLY_CHARGE_TYPE_ADAPTIVE;
+		return POWER_SUPPLY_CHARGE_TYPE_TAPER;
 	else if (reg == STATUS_C_PRE_CHARGING)
 		return POWER_SUPPLY_CHARGE_TYPE_TRICKLE;
 	else
@@ -1018,34 +1053,62 @@ static int smb358_get_prop_batt_health(struct smb358_charger *chip)
 #define DEFAULT_TEMP 250
 static int smb358_get_prop_batt_temp(struct smb358_charger *chip)
 {
-	union power_supply_propval ret = {0, };
+	int batt_therm_result = 0;
+	int rc = 0;
 
-	if (chip->bms_psy) {
-		power_supply_get_property(chip->bms_psy,
-				POWER_SUPPLY_PROP_TEMP, &ret);
-		return ret.intval;
+	if (!smb358_get_prop_batt_present(chip))
+		return DEFAULT_TEMP;
+
+	if (chip->iio.batt_therm) {
+		rc = iio_read_channel_processed(chip->iio.batt_therm,
+			&batt_therm_result);
+		if (rc < 0) {
+			pr_err("Unable to read batt_therm, rc = %d\n", rc);
+			return 0;
+		}
+		return batt_therm_result/100;
 	}
-
-	pr_debug("return default temperature\n");
 	return DEFAULT_TEMP;
 }
 
-
-static int
-smb358_get_prop_battery_voltage_now(struct smb358_charger *chip)
+int battid_resister = 0;
+#define DEFAULT_RESISTER 50
+int smb358_get_prop_battid_resister(struct smb358_charger *chip)
 {
-	int vbat_sns_result = 0;
+	int batt_id_result = 0;
 	int rc = 0;
 
-	if (chip->iio.vbat_sns) {
-		rc = iio_read_channel_processed(chip->iio.vbat_sns,
-			&vbat_sns_result);
+	if (chip->iio.batt_id_therm) {
+		rc = iio_read_channel_processed(chip->iio.batt_id_therm,
+			&batt_id_result);
 		if (rc < 0) {
-			pr_err("Unable to read vbat, rc = %d\n", rc);
+			pr_err("Unable to read batt_шв, rc = %d\n", rc);
 			return 0;
 		}
+		battid_resister = (batt_id_result*68)/(1800000 - batt_id_result);
+		pr_err("battid_resister = %d\n", battid_resister);
+		return battid_resister;
 	}
-	return vbat_sns_result;
+
+	pr_err("battid_resister not detect, return default value\n");
+	return DEFAULT_RESISTER;
+}
+
+#define SMB358_DEFAULT_BATT_VOLTAGE 4000
+static int smb358_get_prop_battery_voltage_now(struct smb358_charger *chip)
+{
+	union power_supply_propval ret = {0, };
+#ifdef CONFIG_MACH_XIAOMI_ROLEX
+	if (!chip->bms_psy)
+		chip->bms_psy = power_supply_get_by_name("rk-bat");
+#endif
+	if (chip->bms_psy) {
+		power_supply_get_property(chip->bms_psy,
+				POWER_SUPPLY_PROP_VOLTAGE_NOW, &ret);
+		return ret.intval;
+	}
+	pr_debug("Couldn't get bms_psy, return default capacity\n");
+	return SMB358_DEFAULT_BATT_VOLTAGE;
 }
 
 static int smb358_get_iio_channel(struct smb358_charger *chip,
@@ -1251,7 +1314,7 @@ static int smb358_battery_get_property(struct power_supply *psy,
 		val->intval = smb358_get_prop_batt_health(chip);
 		break;
 	case POWER_SUPPLY_PROP_TECHNOLOGY:
-		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
+		val->intval = POWER_SUPPLY_TECHNOLOGY_LIPO;
 		break;
 	case POWER_SUPPLY_PROP_MODEL_NAME:
 		val->strval = "SMB358";
@@ -1261,6 +1324,15 @@ static int smb358_battery_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 		val->intval = smb358_get_prop_battery_voltage_now(chip);
+		break;
+	case POWER_SUPPLY_PROP_BATTERY_TYPE:
+		val->strval = (chip->battery_type);
+		break;
+	case POWER_SUPPLY_PROP_RESISTANCE_ID:
+		val->intval = smb358_get_prop_battid_resister(chip);
+		break;
+	case POWER_SUPPLY_PROP_CURRENT_NOW:
+		val->intval = get_prop_current_now(chip);
 		break;
 	default:
 		return -EINVAL;
@@ -1969,58 +2041,27 @@ static void dump_regs(struct smb358_charger *chip)
 }
 #endif
 
-static int smb_parse_batt_id(struct smb358_charger *chip)
+extern int battery_type_id;
+static const char *default_batt_type = "Generic_Battery";
+static int smb_parse_dt_battery(struct smb358_charger *chip)
 {
-	int rc = 0, rpull = 0, vref = 0;
-	int64_t denom, batt_id_uv, numerator;
 	struct device_node *node = chip->dev->of_node;
-	int batt_id_result = 0;
+	struct device_node *batt_node, *profile_node;
 
-	rc = of_property_read_u32(node, "qcom,batt-id-vref-uv", &vref);
-	if (rc < 0) {
-		dev_err(chip->dev,
-			"Couldn't read batt-id-vref-uv rc=%d\n", rc);
-		return rc;
-	}
-
-	rc = of_property_read_u32(node, "qcom,batt-id-rpullup-kohm", &rpull);
-	if (rc < 0) {
-		dev_err(chip->dev,
-			"Couldn't read batt-id-rpullup-kohm rc=%d\n", rc);
-		return rc;
-	}
-
-	if (chip->iio.batt_id_therm) {
-		rc = iio_read_channel_processed(chip->iio.batt_id_therm,
-			&batt_id_result);
-		if (rc < 0) {
-			pr_err("Couldn't read batt id channel=%d, rc = %d\n",
-				VADC_LR_MUX2_BAT_ID, rc);
-			return -EINVAL;
-		}
-	}
-
-	/* batt_id_result is in mv */
-	batt_id_uv = batt_id_result * 1000;
-
-	if (batt_id_uv == 0) {
-		/* vadc not correct or batt id line grounded, report 0 kohms */
-		dev_warn(chip->dev, "batt_id_uv=0, batt-id grounded\n");
+	batt_node = of_find_node_by_name(node, "qcom,battery-data");
+	if (!batt_node) {
 		return 0;
 	}
 
-	numerator = batt_id_uv * rpull * 1000;
-	denom = vref  - batt_id_uv;
+	profile_node = of_batterydata_get_best_profile(batt_node,
+							"battery", NULL);
 
-	/* batt id connector might be open, return 0 kohms */
-	if (denom == 0)
-		return 0;
-
-	chip->connected_rid = div64_s64(numerator, denom);
-
-	dev_dbg(chip->dev,
-		"batt_id_voltage=%lld numerator=%lld denom=%lld connected_rid=%d\n",
-		batt_id_uv, numerator, denom, chip->connected_rid);
+	if (battery_type_id == 1 || battery_type_id == 2)
+		of_property_read_string(profile_node, "qcom,battery-type", &chip->battery_type);
+	else {
+		chip->battery_type = default_batt_type;
+	}
+	dev_err(chip->dev, "found battery type is %s\n", chip->battery_type);
 	return 0;
 }
 
@@ -2090,7 +2131,7 @@ static int smb_parse_dt(struct smb358_charger *chip)
 	chip->pinctrl_state_name = of_get_property(node, "pinctrl-names", NULL);
 
 	/* Extract ADC channels */
-	rc = smb358_get_iio_channel(chip, "vbat_sns", &chip->iio.vbat_sns);
+	rc = smb358_get_iio_channel(chip, "batt_therm", &chip->iio.batt_therm);
 	if (rc < 0)
 		return rc;
 
@@ -2111,14 +2152,6 @@ static int smb_parse_dt(struct smb358_charger *chip)
 
 	chip->skip_usb_suspend_for_fake_battery = of_property_read_bool(node,
 				"qcom,skip-usb-suspend-for-fake-battery");
-	if (!chip->skip_usb_suspend_for_fake_battery) {
-		rc = smb_parse_batt_id(chip);
-		if (rc) {
-			dev_err(chip->dev,
-				"failed to read batt-id rc=%d\n", rc);
-			return rc;
-		}
-	}
 
 	pr_debug("inhibit-disabled = %d, recharge-disabled = %d, recharge-mv = %d\n",
 		chip->inhibit_disabled, chip->recharge_disabled,
@@ -2515,6 +2548,12 @@ static int smb358_charger_probe(struct i2c_client *client,
 		goto err_set_vtg_i2c;
 	}
 
+	rc = smb_parse_dt_battery(chip);
+	if  (rc) {
+		dev_err(&client->dev,
+			" smb_parse_dt_battery rc=%d\n", rc);
+	}
+
 	rc = smb358_hw_init(chip);
 	if (rc) {
 		dev_err(&client->dev,
@@ -2602,7 +2641,9 @@ static int smb358_charger_remove(struct i2c_client *client)
 		regulator_disable(chip->vcc_i2c);
 
 	mutex_destroy(&chip->irq_complete);
+#if defined(CONFIG_DEBUG_FS)
 	debugfs_remove_recursive(chip->debug_root);
+#endif
 	return 0;
 }
 

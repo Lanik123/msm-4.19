@@ -59,6 +59,7 @@
 	((pon)->base + PON_OFFSET((pon)->subtype, 0xA, 0xC2))
 #define QPNP_POFF_REASON1(pon) \
 	((pon)->base + PON_OFFSET((pon)->subtype, 0xC, 0xC5))
+#define QPNP_POFF_REASON2(pon)                  ((pon)->base + 0xD)
 #define QPNP_PON_WARM_RESET_REASON2(pon)	((pon)->base + 0xB)
 #define QPNP_PON_OFF_REASON(pon)		((pon)->base + 0xC7)
 #define QPNP_FAULT_REASON1(pon)			((pon)->base + 0xC8)
@@ -253,6 +254,7 @@ static const char * const qpnp_pon_reason[] = {
 	[7] = "Triggered from KPD (Power Key Press)",
 };
 
+static struct qpnp_pon *fake_power_pon;
 #define POFF_REASON_FAULT_OFFSET	16
 #define POFF_REASON_S3_RESET_OFFSET	32
 static const char * const qpnp_poff_reason[] = {
@@ -777,6 +779,75 @@ int qpnp_pon_is_warm_reset(void)
 }
 EXPORT_SYMBOL(qpnp_pon_is_warm_reset);
 
+int qpnp_pon_is_ps_hold_reset(void)
+{
+	struct qpnp_pon *pon = sys_reset_dev;
+	int rc;
+	int reg = 0;
+
+	if (!pon)
+		return 0;
+
+	rc = regmap_read(pon->regmap, QPNP_POFF_REASON1(pon), &reg);
+	if (rc) {
+		dev_err(pon->dev,
+				"Unable to read addr=%x, rc(%d)\n",
+				QPNP_POFF_REASON1(pon), rc);
+		return 0;
+	}
+
+	/* The bit 1 is 1, means by PS_HOLD/MSM controlled shutdown */
+	if (reg & 0x2)
+		return 1;
+
+	dev_info(pon->dev,
+			"hw_reset reason1 is 0x%x\n",
+			reg);
+
+	rc = regmap_read(pon->regmap, QPNP_POFF_REASON2(pon), &reg);
+
+	dev_info(pon->dev,
+			"hw_reset reason2 is 0x%x\n",
+			reg);
+	return 0;
+}
+EXPORT_SYMBOL(qpnp_pon_is_ps_hold_reset);
+
+int qpnp_pon_is_lpk(void)
+{
+	struct qpnp_pon *pon = sys_reset_dev;
+	int rc;
+	int reg = 0;
+
+	if (!pon)
+		return 0;
+
+	rc = regmap_read(pon->regmap, QPNP_POFF_REASON1(pon), &reg);
+	if (rc) {
+		dev_err(pon->dev,
+				"Unable to read addr=%x, rc(%d)\n",
+				QPNP_POFF_REASON1(pon), rc);
+		return 0;
+	}
+
+
+	if (reg & 0x80)
+		return 1;
+
+	dev_info(pon->dev,
+			"hw_reset reason1 is 0x%x\n",
+			reg);
+
+	rc = regmap_read(pon->regmap, QPNP_POFF_REASON2(pon), &reg);
+
+	dev_info(pon->dev,
+			"hw_reset reason2 is 0x%x\n",
+			reg);
+
+	return 0;
+}
+EXPORT_SYMBOL(qpnp_pon_is_lpk);
+
 /**
  * qpnp_pon_wd_config() - configure the watch dog behavior for warm reset
  * @enable: to enable or disable the PON watch dog
@@ -991,6 +1062,18 @@ static irqreturn_t qpnp_kpdpwr_irq(int irq, void *_pon)
 		dev_err(pon->dev, "Unable to send input event, rc=%d\n", rc);
 
 	return IRQ_HANDLED;
+}
+
+void qpnp_kpdpwr_simulate(void)
+{
+	int rc;
+
+	if (fake_power_pon == NULL)
+		return;
+
+	rc = qpnp_pon_input_dispatch(fake_power_pon, PON_KPDPWR);
+	if (rc)
+		printk(KERN_WARNING "fake_power_pon Unable to send input event\n");
 }
 
 static irqreturn_t qpnp_kpdpwr_bark_irq(int irq, void *_pon)
@@ -1697,6 +1780,7 @@ static int qpnp_pon_config_init(struct qpnp_pon *pon,
 		}
 
 		rc = qpnp_pon_request_irqs(pon, cfg);
+		fake_power_pon = pon;
 		if (rc)
 			return rc;
 	}
