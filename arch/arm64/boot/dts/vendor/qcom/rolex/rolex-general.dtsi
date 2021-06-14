@@ -114,11 +114,10 @@
 };
 
 &pm8937_vadc{
-	chan@13 {
+	case_therm {
 		label = "mpp4";
 		reg = <0x13>;
-		qcom,calibration-type = "absolute";
-		qcom,scale-function = <0>;
+		qcom,pre-scaling = <1 1>;
 	};
 };
 
