@@ -85,6 +85,10 @@
 		regulator-name = "smb358_otg_vreg";
 		qcom,bms-psy-name = "bms";
 		qcom,chg-inhibit-disabled;	
+		io-channels = <&pm8937_vadc VADC_P_MUX2_1_1>,
+		      		  <&pm8937_vadc VADC_P_MUX4_1_1>;
+		io-channel-names = "batt_therm",
+						   "batt_id_therm";
 		qcom,chg-vadc = <&pm8937_vadc>;
 		qcom,iterm-ma = <150>;
 		status = "ok";
