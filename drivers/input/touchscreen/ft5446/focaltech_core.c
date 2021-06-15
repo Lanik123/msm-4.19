@@ -62,7 +62,7 @@
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 struct fts_ts_data *fts_data;
-extern u8 goodix_flag;
+//extern u8 goodix_flag;
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
@@ -1403,10 +1403,12 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	FTS_FUNC_ENTER();
 
+/*
 	if (goodix_flag == 1) {
 		FTS_ERROR("The current ic is goodix!!!");
 		return -ENODEV;
 	}
+*/
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		FTS_ERROR("I2C not supported");
 		return -ENODEV;
