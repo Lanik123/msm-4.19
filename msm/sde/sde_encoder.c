@@ -236,7 +236,8 @@ enum sde_enc_rc_states {
  *				 only in commit phase
  * @crtc_lineptr_cb:	Callback into the upper layer / CRTC for
  *			notification of the LINEPTR
- * lineptr_value: to cache lineptr value
+ * @lineptr_value: to cache lineptr value
+ * @intf_flush_pending:	set when lineptr_value needs updation
  */
 struct sde_encoder_virt {
 	struct drm_encoder base;
@@ -305,6 +306,7 @@ struct sde_encoder_virt {
 
 	void (*crtc_lineptr_cb)(void *data, ktime_t timestamp);
 	u32 lineptr_value;
+	bool intf_flush_pending;
 };
 
 #define to_sde_encoder_virt(x) container_of(x, struct sde_encoder_virt, base)
@@ -3466,7 +3468,7 @@ static void _sde_encoder_virt_enable_helper(struct drm_encoder *drm_enc)
 
 	if (sde_enc->lineptr_value) {
 		ret = sde_encoder_set_lineptr_value(
-					drm_enc, sde_enc->lineptr_value);
+					drm_enc, sde_enc->lineptr_value, true);
 		if (ret)
 			SDE_ERROR("lineptr value write failed\n");
 	}
@@ -5052,6 +5054,10 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 					sde_enc->cur_master->connector)) {
 				_helper_flush_qsync(phys);
 			}
+
+			if (sde_enc->intf_flush_pending)
+				rc = sde_encoder_set_lineptr_value(drm_enc,
+					sde_enc->lineptr_value, true);
 		}
 	}
 
@@ -6396,17 +6402,33 @@ void sde_encoder_recovery_events_handler(struct drm_encoder *encoder,
 }
 
 int sde_encoder_set_lineptr_value(struct drm_encoder *drm_enc,
-					u32 line_value)
+		u32 line_value, bool enable)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
-	struct sde_encoder_phys *phys = sde_enc->cur_master;
+	struct sde_encoder_phys *phys;
+	int rc = 0;
 
-	sde_enc->lineptr_value = line_value;
+	if (!enable) {
+		sde_enc->lineptr_value = line_value;
+		sde_enc->intf_flush_pending = true;
+		return rc;
+	}
 
-	if (phys && phys->ops.set_lineptr)
-		return phys->ops.set_lineptr(phys, line_value);
+	phys = sde_enc->cur_master;
 
-	return -EINVAL;
+	if (phys && phys->ops.set_lineptr) {
+		rc = phys->ops.set_lineptr(phys, line_value);
+
+		if (rc)
+			SDE_ERROR("lineptr value write failed\n");
+
+		if (phys->hw_ctl && phys->hw_ctl->ops.update_bitmask_intf)
+			phys->hw_ctl->ops.update_bitmask_intf(phys->hw_ctl,
+						phys->hw_intf->idx, true);
+		sde_enc->intf_flush_pending = false;
+	}
+
+	return rc;
 }
 
 void sde_encoder_register_lineptr_callback(struct drm_encoder *drm_enc,

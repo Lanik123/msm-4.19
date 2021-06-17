@@ -137,10 +137,11 @@ int sde_encoder_poll_line_counts(struct drm_encoder *encoder);
  *	needs to be triggered.
  * @encoder:	encoder pointer
  * line_value:	lineptr value user requested
+ * #enable:	true if in commit context
  * Returns: 0 on success, errorcode otherwise
- */
+  */
 int sde_encoder_set_lineptr_value(struct drm_encoder *encoder,
-		u32 line_value);
+		u32 line_value, bool enable);
 
 /**
  * sde_encoder_register_lineptr_callback - provide callback to encoder that
