@@ -40,13 +40,9 @@
 		qcom,mdss-dsi-h-right-border = <0>;
 		qcom,mdss-dsi-v-top-border = <0>;
 		qcom,mdss-dsi-v-bottom-border = <20>;
-		qcom,mdss-dsi-panel-jitter = <0x8 0xa>;
 		qcom,mdss-dsi-bpp = <24>;
 		qcom,mdss-dsi-underflow-color = <0x00>;
 		qcom,mdss-dsi-border-color = <0>;
-		qcom,ulps-enabled;
-		qcom,suspend-ulps-enabled;
-		qcom,panel-allow-phy-poweroff;
 		qcom,mdss-dsi-on-command = [29 01 00 00 00 00 06 F0 55 AA 52 08 00
 				29 01 00 00 00 00 02 B1 6C
 				29 01 00 00 00 00 02 64 07
@@ -215,7 +211,7 @@
 		qcom,mdss-dsi-t-clk-post = <0x03>;
 		qcom,mdss-dsi-t-clk-pre = <0x27>;
 		qcom,mdss-dsi-bl-min-level = <4>;
-		qcom,mdss-dsi-bl-max-level = <4095>;
+		qcom,mdss-dsi-bl-max-level = <255>;
 		qcom,mdss-dsi-bl-pmic-pwm-frequency = <100>;
 		qcom,mdss-dsi-bl-pmic-bank-select = <0>;
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
