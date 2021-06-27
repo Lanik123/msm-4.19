@@ -3,6 +3,7 @@
 #include <dt-bindings/spmi/spmi.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/qcom,gcc-sdm429w.h>
+#include <dt-bindings/clock/qcom,cpu-sdm.h>
 #include <dt-bindings/clock/qcom,rpmcc.h>
 #include <dt-bindings/clock/mdss-28nm-pll-clk-legacy.h>
 #include <dt-bindings/clock/qcom,cpu-sdm.h>
@@ -25,7 +26,7 @@
 			compatible = "android,firmware";
 			vbmeta {
 				compatible = "android,vbmeta";
-			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+			parts = "vbmeta,boot,system,vendor,dtbo";
 			};
 
 			fstab {
@@ -35,7 +36,7 @@
 		dev = "/dev/block/platform/soc/7824900.sdhci/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
-					fsmgr_flags = "wait,avb";
+					fsmgr_flags = "wait,slotselect,avb";
 					status = "ok";
 				};
 			};
@@ -574,10 +575,9 @@
 	};
 
 	gcc: qcom,gcc@1800000 {
-		compatible = "qcom,gcc-msm8937", "syscon";
-		reg = <0x1800000 0x80000>,
-			 <0x00a6018 0x00004>;
-		reg-names = "cc_base", "gpu-bin";
+		compatible = "qcom,gcc-sdm439", "syscon";
+		reg = <0x1800000 0x80000>;
+		reg-names = "cc_base";
 		qcom,gcc_oxili_gfx3d_clk-opp-handle = <&msm_gpu>;
 		vdd_cx-supply = <&pm8937_s2_level>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
@@ -586,12 +586,15 @@
 		#reset-cells = <1>;
 	};
 
+	cpu_debug: syscon@0b11101c {
+		compatible = "syscon";
+		reg = <0xb11101c 0x4>;
+	};
+
 	debugcc: qcom,cc-debug {
-		compatible = "qcom,qm215-debugcc";
-		reg = <0x1874000 0x4>,
-			<0xb11101c 0x8>;
-		reg-names = "cc_base", "meas";
+		compatible = "qcom,sdm439-debugcc";
 		qcom,gcc = <&gcc>;
+		qcom,cpu = <&cpu_debug>;
 		clocks = <&rpmcc RPM_SMD_XO_CLK_SRC>;
 		clock-names = "xo_clk_src";
 		#clock-cells = <1>;
@@ -609,18 +612,19 @@
 		#clock-cells = <1>;
 	};
 
-	apsscc: qcom,clock-cpu@b011050 {
+	apsscc: qcom,clock-cpu@b111050 {
 		compatible = "qcom,cpu-clock-sdm439";
 		reg =   <0xb011050 0x8>,
-			<0xb111050 0x8>,
+			<0xb016000 0x34>,
+			<0xb011200 0x100>,
 			<0xb1d1050 0x8>,
-			<0xb016000 0x4>,
-			<0xb116000 0x4>,
-			<0x00a412c 0x8>,
-			<0x0b011200 0x100>;
-		reg-names = "apcs-c1-rcg-base", "apcs-c0-rcg-base",
-				"apcs-cci-rcg-base", "apcs_pll1", "apcs_pll0", 
-				"efuse", "spm_c1_base";
+			<0xb111050 0x8>,
+			<0xb116000 0x34>,
+			<0xb111200 0x100>,
+			<0x00a412c 0x8>;
+		reg-names = "apcs-c1-rcg-base", "apcs_pll1", "spm_c1_base",
+			"apcs-cci-rcg-base", "apcs-c0-rcg-base",
+			"apcs_pll0", "spm_c0_base", "efuse";
 		cpu-vdd-supply = <&apc_vreg_corner>;
 		vdd_dig_ao-supply = <&pm8937_s2_level_ao>;
 		vdd_hf_pll-supply = <&pm8937_l7_ao>;
@@ -886,10 +890,10 @@
 
 	msm_cpufreq: qcom,msm-cpufreq {
 		compatible = "qcom,msm-cpufreq";
-		clock-names = "l2_clk", "cpu0_clk", "cpu4_clk";
 		clocks = <&apsscc APCS_MUX_CCI_CLK>,
 			<&apsscc APCS_MUX_C1_CLK>,
 			<&apsscc APCS_MUX_C0_CLK>;
+		clock-names = "l2_clk", "cpu0_clk", "cpu4_clk";
 
 		qcom,governor-per-policy;
 
@@ -952,7 +956,16 @@
 		qcom,target-dev = <&cpu_cpu_ddr_bw>;
 	};
 
-	cpu_cpu_ddr_latfloor: qcom,cpu-cpu-ddr-latfloor {
+	cpu0_cpu_ddr_latfloor: qcom,cpu0-cpu-ddr-latfloor {
+		compatible = "qcom,devbw";
+		governor = "performance";
+		qcom,src-dst-ports =
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
+		qcom,active-only;
+		operating-points-v2 = <&ddr_bw_opp_table>;
+	};
+
+	cpu4_cpu_ddr_latfloor: qcom,cpu4-cpu-ddr-latfloor {
 		compatible = "qcom,devbw";
 		governor = "performance";
 		qcom,src-dst-ports =
@@ -968,7 +981,7 @@
 		cpu0_computemon: qcom,cpu0-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
-			qcom,target-dev = <&cpu_cpu_ddr_latfloor>;
+			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1094400 MHZ_TO_MBPS(384, 8) >,
 				< 1497600 MHZ_TO_MBPS(557, 8) >;
@@ -982,7 +995,7 @@
 		cpu4_computemon: qcom,cpu4-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
-			qcom,target-dev = <&cpu_cpu_ddr_latfloor>;
+			qcom,target-dev = <&cpu4_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				<  998400 MHZ_TO_MBPS(384, 8) >,
 				< 1209600 MHZ_TO_MBPS(557, 8) >;
@@ -1038,6 +1051,7 @@
 	rpm_bus: qcom,rpm-smd {
 		compatible = "qcom,rpm-smd";
 		rpm-channel-name = "rpm_requests";
+		interrupts = <GIC_SPI 168 IRQ_TYPE_EDGE_RISING>;
 		rpm-channel-type = <15>; /* SMD_APPS_RPM */
 	};
 
@@ -1484,6 +1498,7 @@
 			qcom,ipc = <&apcs 0 8>;
 			qcom,smd-edge = <1>;
 			qcom,remote-pid = <2>;
+			mbox-names = "adsp_smem";
 			label = "adsp";
 
 			qcom,smd-channels = "IPCRTR";
@@ -1498,6 +1513,10 @@
 
 			qcom,diag_cntl {
 				qcom,smd-channels = "DIAG_CNTL";
+			};
+
+			qcom,apr_tal_rpmsg {
+				qcom,smd-channels = "apr_audio_svc";
 			};
 		};
 
@@ -2166,6 +2185,9 @@
 		clock-names = "xo", "rf_clk", "snoc_wcnss";
 
 		qcom,snoc-wcnss-clock-freq = <200000000>;
+
+		qcom,smem-states = <&apps_smsm 10>, <&apps_smsm 9>, <&apps_smsm 12>;
+		qcom,smem-state-names = "tx-enable", "tx-rings-empty", "wake-state";
 
 		qcom,has-autodetect-xo;
 		qcom,is-pronto-v3;

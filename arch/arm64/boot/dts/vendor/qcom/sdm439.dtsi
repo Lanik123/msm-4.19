@@ -37,13 +37,10 @@
 	/delete-node/ qcom,msm-cpufreq;
 	msm_cpufreq: qcom,msm-cpufreq {
 		compatible = "qcom,msm-cpufreq";
-		clock-names =
-			"l2_clk",
-			"cpu0_clk",
-			"cpu4_clk";
 		clocks = <&apsscc APCS_MUX_CCI_CLK>,
 			<&apsscc APCS_MUX_C1_CLK>,
 			<&apsscc APCS_MUX_C0_CLK>;
+		clock-names = "l2_clk", "cpu0_clk", "cpu4_clk";
 
 		qcom,governor-per-policy;
 
@@ -53,8 +50,7 @@
 			 < 1497600 >,
 			 < 1708800 >,
 			 < 1804800 >,
-			 < 1958400 >,
-			 < 2016000 >;
+			 < 1958400 >;
 
 		qcom,cpufreq-table-4 =
 			 <  768000 >,
@@ -90,8 +86,18 @@
 		operating-points-v2 = <&ddr_bw_opp_table>;
 	};
 
-	/delete-node/ qcom,cpu0-cpu-ddr-latfloor;
-	cpu0_cpu_ddr_latfloor: qcom,cpu0-cpu-ddr-latfloor {
+	/delete-node/ qcom,cpu-cpu-ddr-latfloor;
+	cpu_cpu_ddr_latfloor: qcom,cpu-cpu-ddr-latfloor {
+		compatible = "qcom,devbw";
+		governor = "performance";
+		qcom,src-dst-ports =
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_EBI_CH0>;
+		qcom,active-only;
+		operating-points-v2 = <&ddr_bw_opp_table>;
+	};
+
+	/delete-node/ qcom,cpu4-cpu-ddr-latfloor;
+	cpu4_cpu_ddr_latfloor: qcom,cpu4-cpu-ddr-latfloor {
 		compatible = "qcom,devbw";
 		governor = "performance";
 		qcom,src-dst-ports =
@@ -122,7 +128,7 @@
 		cpu0_computemon: qcom,cpu0-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
-			qcom,target-dev = <&cpu_cpu_ddr_latfloor>;
+			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1305600 MHZ_TO_MBPS(384, 8) >,
 				< 1804800 MHZ_TO_MBPS(557, 8) >;
@@ -137,7 +143,7 @@
 		cpu4_computemon: qcom,cpu4-computemon {
 			compatible = "qcom,arm-compute-mon";
 			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
-			qcom,target-dev = <&cpu_cpu_ddr_latfloor>;
+			qcom,target-dev = <&cpu4_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1171200 MHZ_TO_MBPS(384, 8) >,
 				< 1459200 MHZ_TO_MBPS(749, 8) >;
@@ -152,13 +158,13 @@
 
 		CPU_COST_0: core-cost0 {
 			busy-cost-data = <
-				 800000	137
-				1305600	207
-				1497600	256
-				1708800	327
-				1804800	343
-				1958400	445
-				2016000	470
+				 406 137
+				 663 207
+				 761 256
+				 868 327
+				 917 343
+				 995 445
+				1024 470
 			>;
 			idle-cost-data = <
 				100 80 60 40
@@ -167,11 +173,11 @@
 
 		CPU_COST_1: core-cost1 {
 			busy-cost-data = <
-				 768000	43
-				 998400	56
-				1171200	71
-				1305600	89
-				1459200	120
+				355 43
+				461 56
+				541 71
+				603 89
+				674 120
 			>;
 		};
 	};
@@ -227,16 +233,17 @@
 		compatible = "qcom,smmu-kgsl-cb";
 		iommus = <&kgsl_smmu 2>;
 		memory-region = <&secure_mem>;
+		qcom,iommu-dma = "disabled";
+		qcom,iommu-vmid = <0xA>;  /* VMID_CP_PIXEL */
 	};
 };
 
 &apsscc {
-	compatible = "qcom,cpu-clock-sdm439";
 	cpu-vdd-supply = <&apc_vreg_corner>;
-	vdd_dig_ao-supply = <&pm8953_s2_level_ao>;
 	vdd_hf_pll-supply = <&pm8953_l7_ao>;
-	vdd_sr2_dig_ao-supply = <&pm8953_s2_level_ao>;
+	vdd_dig_ao-supply = <&pm8953_s2_level_ao>;
 	vdd_sr2_pll-supply = <&pm8953_l7_ao>;
+	vdd_sr2_dig_ao-supply = <&pm8953_s2_level_ao>;
 	qcom,speed0-bin-v0-c0 =
 		<          0 0>,
 		<  768000000 1>,
@@ -323,18 +330,7 @@
 };
 
 &gcc {
-	compatible = "qcom,gcc-sdm439";
-	reg = <0x1800000 0x80000>,
-		<0xb016000 0x00040>,
-		<0xb116000 0x00040>,
-		<0x00a6018 0x00004>;
-	reg-names = "cc_base", "apcs_c1_base",
-			"apcs_c0_base", "gpu-bin";
 	vdd_cx-supply = <&pm8953_s2_level>;
-	vdd_sr2_dig-supply = <&pm8953_s2_level_ao>;
-	vdd_sr2_pll-supply = <&pm8953_l7_ao>;
-	vdd_hf_dig-supply = <&pm8953_s2_level_ao>;
-	vdd_hf_pll-supply = <&pm8953_l7_ao>;
 };
 
 &gcc_mdss {
@@ -414,20 +410,31 @@
 	/delete-property/ qcom,platform-lane-config;
 };
 
-/* GPU Overrides*/
-&gpubw {
-	/delete-property/qcom,bw-tbl;
-	qcom,bw-tbl =
-		< 0    >, /*  off */
-		<  769 >, /* 1. DDR:100.80 MHz BIMC: 50.40 MHz */
-		< 1611 >, /* 2. DDR:211.20 MHz BIMC: 105.60 MHz */
-		< 2273 >, /* 3. DDR:297.60 MHz BIMC: 148.80 MHz */
-		< 2929 >, /* 4. DDR:384.00 MHz BIMC: 192.00 MHz */
-		< 4248 >, /* 5. DDR:556.80 MHz BIMC: 278.40 MHz */
-		< 5346 >, /* 6. DDR:662.40 MHz BIMC: 331.20 MHz */
-		< 5712 >, /* 7. DDR:748.80 MHz BIMC: 374.40 MHz */
-		< 6150 >, /* 8. DDR:796.80 MHz BIMC: 398.40 MHz */
-		< 7105 >; /* 9. DDR:931.20 MHz BIMC: 465.60 MHz */
+/* GPU Overrides */
+&soc {
+	/delete-node/ gpu-bw-tbl;
+	gpu_bw_tbl: gpu-bw-tbl {
+		compatible = "operating-points-v2";
+		opp-0   { opp-hz = /bits/ 64 < 0 >;     }; /* OFF */
+
+		opp-100 { opp-hz = /bits/ 64 < 769 >;   }; /*  1. 100 MHz */
+
+		opp-211 { opp-hz = /bits/ 64 < 1611 >;  }; /*  2. 211 MHz */
+
+		opp-298 { opp-hz = /bits/ 64 < 2273 >;  }; /*  3. 298 MHz */
+
+		opp-384 { opp-hz = /bits/ 64 < 2929 >;  }; /*  4. 384 MHz */
+
+		opp-557 { opp-hz = /bits/ 64 < 4248 >;  }; /*  5. 557 MHz */
+
+		opp-700 { opp-hz = /bits/ 64 < 5346 >;  }; /*  6. 700 MHz */
+
+		opp-748 { opp-hz = /bits/ 64 < 5712 >;  }; /*  7. 748 MHz */
+
+		opp-806 { opp-hz = /bits/ 64 < 6150 >;  }; /*  8. 806 MHz */
+
+		opp-931 { opp-hz = /bits/ 64 < 7105 >;  }; /*  9. 931 MHz */
+	};
 };
 
 &msm_gpu {
