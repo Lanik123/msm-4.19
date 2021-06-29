@@ -2,6 +2,6 @@
 #include "rolex-pinctrl.dtsi"
 //#include "rolex-audio.dtsi"
 #include "rolex-memory.dtsi"
-//#include "rolex-camera-qrd.dtsi"
+#include "rolex-camera-qrd.dtsi"
 #include "rolex-panel.dtsi" 
 #include "rolex-regulator.dtsi" 
