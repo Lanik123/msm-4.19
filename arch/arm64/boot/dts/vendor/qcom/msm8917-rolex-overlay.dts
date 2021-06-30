@@ -15,6 +15,7 @@
 
 #include "msm8917.dtsi"
 #include "msm8917-qrd.dtsi"
+#include "msm8917-audio.dtsi"
 #include "msm8917-mdss-panels.dtsi"
 
 / {
