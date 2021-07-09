@@ -6549,6 +6549,10 @@ int sde_encoder_set_lineptr_value(struct drm_encoder *drm_enc,
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	struct sde_encoder_phys *phys;
+	struct drm_display_mode mode;
+	struct msm_mode_info mode_info;
+	u32 pixel_location, comp_ratio = 1, target_bpp, src_bpp;
+	u32 h_blanking, compressed_htotal;
 	int rc = 0;
 
 	if (!enable) {
@@ -6558,9 +6562,31 @@ int sde_encoder_set_lineptr_value(struct drm_encoder *drm_enc,
 	}
 
 	phys = sde_enc->cur_master;
+	mode = phys->cached_mode;
+	mode_info = sde_enc->mode_info;
+
+	if (mode_info.comp_info.comp_type == MSM_DISPLAY_COMPRESSION_DSC) {
+		target_bpp = mode_info.comp_info.dsc_info.bpp;
+		src_bpp = mode_info.comp_info.dsc_info.bpc * 3;
+		comp_ratio = mult_frac(1, src_bpp, target_bpp);
+	}
+
+	if (line_value > mode.vtotal)
+		line_value = mode.vtotal;
+
+	h_blanking = mode.htotal - mode.hdisplay;
+	compressed_htotal = mode.hdisplay / comp_ratio;
+	compressed_htotal += h_blanking;
+
+	pixel_location = line_value * compressed_htotal;
+	/* pixel_location ranges from 0 to (compressed_htotal * vtotal - 1) */
+	if (pixel_location > 0)
+		pixel_location -= 1;
+
+	SDE_EVT32(pixel_location, comp_ratio, line_value);
 
 	if (phys && phys->ops.set_lineptr) {
-		rc = phys->ops.set_lineptr(phys, line_value);
+		rc = phys->ops.set_lineptr(phys, pixel_location);
 
 		if (rc)
 			SDE_ERROR("lineptr value write failed\n");
