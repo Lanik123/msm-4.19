@@ -457,8 +457,8 @@ static ssize_t lineptr_value_store(struct device *device,
 			ret = -EOPNOTSUPP;
 			SDE_ERROR("crtc state inactive\n");
 		} else {
-			ret = sde_encoder_set_lineptr_value(
-							encoder, line_value);
+			ret = sde_encoder_set_lineptr_value(encoder,
+						line_value, false);
 		}
 		drm_modeset_unlock(&crtc->mutex);
 	}
