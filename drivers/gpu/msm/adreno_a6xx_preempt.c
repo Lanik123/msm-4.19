@@ -197,9 +197,11 @@ static void _a6xx_preemption_worker(struct work_struct *work)
 	mutex_unlock(&device->mutex);
 }
 
-static void _a6xx_preemption_timer(unsigned long data)
+static void _a6xx_preemption_timer(struct timer_list *t)
 {
-	struct adreno_device *adreno_dev = (struct adreno_device *) data;
+	struct adreno_preemption *preempt = from_timer(preempt, t, timer);
+	struct adreno_device *adreno_dev = container_of(preempt,
+						struct adreno_device, preempt);
 
 	/* We should only be here from a triggered state */
 	if (!adreno_move_preempt_state(adreno_dev,
@@ -744,8 +746,7 @@ int a6xx_preemption_init(struct adreno_device *adreno_dev)
 
 	INIT_WORK(&preempt->work, _a6xx_preemption_worker);
 
-	setup_timer(&preempt->timer, _a6xx_preemption_timer,
-		(unsigned long) adreno_dev);
+	timer_setup(&preempt->timer, _a6xx_preemption_timer, 0);
 
 	/*
 	 * Allocate a scratch buffer to keep the below table:

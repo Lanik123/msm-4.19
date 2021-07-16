@@ -18,9 +18,11 @@
 
 #define ADRENO_RB_PREEMPT_TOKEN_DWORDS		125
 
-static void a4xx_preemption_timer(unsigned long data)
+static void a4xx_preemption_timer(struct timer_list *t)
 {
-	struct adreno_device *adreno_dev = (struct adreno_device *) data;
+	struct adreno_preemption *preempt = from_timer(preempt, t, timer);
+	struct adreno_device *adreno_dev = container_of(preempt,
+						struct adreno_device, preempt);
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	unsigned int cur_rptr = adreno_get_rptr(adreno_dev->cur_rb);
 	unsigned int next_rptr = adreno_get_rptr(adreno_dev->next_rb);
@@ -566,8 +568,7 @@ void a4xx_preemption_schedule(struct adreno_device *adreno_dev)
 
 int a4xx_preemption_init(struct adreno_device *adreno_dev)
 {
-	setup_timer(&adreno_dev->preempt.timer, a4xx_preemption_timer,
-		(unsigned long) adreno_dev);
+	timer_setup(&adreno_dev->preempt.timer, a4xx_preemption_timer, 0);
 
 	return 0;
 }

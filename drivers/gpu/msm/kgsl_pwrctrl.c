@@ -1951,9 +1951,11 @@ static void kgsl_thermal_cycle(struct work_struct *work)
 	mutex_unlock(&device->mutex);
 }
 
-static void kgsl_thermal_timer(unsigned long data)
+static void kgsl_thermal_timer(struct timer_list *t)
 {
-	struct kgsl_device *device = (struct kgsl_device *) data;
+	struct kgsl_pwrctrl *pwr = from_timer(pwr, t, thermal_timer);
+	struct kgsl_device *device = container_of(pwr,
+					struct kgsl_device, pwrctrl);
 
 	/* Keep the timer running consistently despite processing time */
 	if (device->pwrctrl.thermal_highlow) {
@@ -2407,8 +2409,7 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	}
 
 	INIT_WORK(&pwr->thermal_cycle_ws, kgsl_thermal_cycle);
-	setup_timer(&pwr->thermal_timer, kgsl_thermal_timer,
-			(unsigned long) device);
+	timer_setup(&pwr->thermal_timer, kgsl_thermal_timer, 0);
 
 	INIT_LIST_HEAD(&pwr->limits);
 	spin_lock_init(&pwr->limits_lock);
@@ -2527,9 +2528,9 @@ done:
 }
 EXPORT_SYMBOL(kgsl_idle_check);
 
-void kgsl_timer(unsigned long data)
+void kgsl_timer(struct timer_list *t)
 {
-	struct kgsl_device *device = (struct kgsl_device *) data;
+	struct kgsl_device *device = from_timer(device, t, idle_timer);
 
 	KGSL_PWR_INFO(device, "idle timer expired device %d\n", device->id);
 	if (device->requested_state != KGSL_STATE_SUSPEND) {

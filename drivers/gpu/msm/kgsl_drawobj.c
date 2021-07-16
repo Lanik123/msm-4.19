@@ -119,10 +119,10 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 	}
 }
 
-static void syncobj_timer(unsigned long data)
+static void syncobj_timer(struct timer_list *t)
 {
 	struct kgsl_device *device;
-	struct kgsl_drawobj_sync *syncobj = (struct kgsl_drawobj_sync *) data;
+	struct kgsl_drawobj_sync *syncobj = from_timer(syncobj, t, timer);
 	struct kgsl_drawobj *drawobj;
 	struct kgsl_drawobj_sync_event *event;
 	unsigned int i;
@@ -751,8 +751,7 @@ struct kgsl_drawobj_sync *kgsl_drawobj_sync_create(struct kgsl_device *device,
 
 	/* Add a timer to help debug sync deadlocks */
 	if (!IS_ERR(syncobj))
-		setup_timer(&syncobj->timer, syncobj_timer,
-				(unsigned long) syncobj);
+		timer_setup(&syncobj->timer, syncobj_timer, 0);
 
 	return syncobj;
 }

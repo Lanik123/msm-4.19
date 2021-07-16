@@ -517,7 +517,7 @@ static int rpmh_arc_cmds(struct gmu_device *gmu,
 {
 	unsigned int len;
 
-	len = cmd_db_get_aux_data_len(res_id);
+	len = cmd_db_read_aux_data_len(res_id);
 	if (len == 0)
 		return -EINVAL;
 
@@ -528,7 +528,7 @@ static int rpmh_arc_cmds(struct gmu_device *gmu,
 		return -EINVAL;
 	}
 
-	cmd_db_get_aux_data(res_id, (uint8_t *)arc->val, len);
+	cmd_db_read_aux_data(res_id, (uint8_t *)arc->val, len);
 
 	/*
 	 * cmd_db_get_aux_data() gives us a zero-padded table of
@@ -706,7 +706,7 @@ static void build_rpmh_bw_votes(struct gmu_bw_votes *rpmh_vote,
 			 */
 				rpmh_vote->cmds_per_bw_vote = tmp->num_cmds;
 				rpmh_vote->cmds_wait_bitmask =
-						tmp->cmds[j].complete ?
+						tmp->cmds[j].wait ?
 						rpmh_vote->cmds_wait_bitmask
 						| BIT(i)
 						: rpmh_vote->cmds_wait_bitmask
