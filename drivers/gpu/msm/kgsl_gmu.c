@@ -21,7 +21,6 @@
 #include <linux/pm_opp.h>
 #include <linux/io.h>
 #include <soc/qcom/cmd-db.h>
-#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 
 #include "kgsl_device.h"
 #include "kgsl_gmu.h"
@@ -277,7 +276,7 @@ static int gmu_iommu_cb_probe(struct gmu_device *gmu,
 	int ret;
 
 	dev = &pdev->dev;
-	of_dma_configure(dev, node);
+	of_dma_configure(dev, node, true);
 
 	ctx->dev = dev;
 	ctx->domain = iommu_domain_alloc(&platform_bus_type);
@@ -672,7 +671,7 @@ static int rpmh_arc_votes_init(struct gmu_device *gmu,
 
 		/* Values from OPP framework are offset by 1 */
 		vlvl_tbl[i] = dev_pm_opp_get_voltage(opp)
-				- RPMH_REGULATOR_LEVEL_OFFSET;
+				- 1;
 		dev_pm_opp_put(opp);
 	}
 
@@ -1183,7 +1182,7 @@ int gmu_probe(struct kgsl_device *device)
 		return ret;
 
 	device->gmu.pdev = of_find_device_by_node(node);
-	of_dma_configure(&gmu->pdev->dev, node);
+	of_dma_configure(&gmu->pdev->dev, node, true);
 
 	/* Set up GMU regulators */
 	ret = gmu_regulators_probe(gmu, node);
