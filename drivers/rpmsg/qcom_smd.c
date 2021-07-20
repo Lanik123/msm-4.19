@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2015, Sony Mobile Communications AB.
- * Copyright (c) 2012-2013, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013, 2021 The Linux Foundation. All rights reserved.
  */
 
 #include <linux/interrupt.h>
@@ -662,12 +662,19 @@ static int qcom_smd_channel_recv_single(struct qcom_smd_channel *channel)
 		len = channel->pkt_size;
 	}
 
-	ret = ept->cb(ept->rpdev, ptr, len, ept->priv, RPMSG_ADDR_ANY);
-	if (ret < 0) {
-		smd_ipc(channel->edge->ipc, false, NULL,
-			"%s: ret %d len %d ch %s\n", __func__, ret, len,
+	if (ept->cb) {
+		ret = ept->cb(ept->rpdev, ptr, len, ept->priv, RPMSG_ADDR_ANY);
+		if (ret < 0) {
+			smd_ipc(channel->edge->ipc, false, NULL,
+				"%s: ret %d len %d ch %s\n", __func__, ret, len,
 								channel->name);
-		return ret;
+			return ret;
+		}
+	} else {
+		smd_ipc(channel->edge->ipc, false, NULL,
+			"%s: Callback not available on channel: %s\n", __func__,
+								channel->name);
+		return -EAGAIN;
 	}
 
 	/* Only forward the tail if the client consumed the data */
@@ -915,7 +922,7 @@ static int __qcom_smd_send(struct qcom_smd_channel *channel, const void *data,
 		ret = wait_event_interruptible(channel->fblockread_event,
 				       qcom_smd_get_tx_avail(channel) >= tlen ||
 				       channel->state != SMD_CHANNEL_OPENED ||
-					channel->remote_state != SMD_CHANNEL_OPENED);
+				channel->remote_state != SMD_CHANNEL_OPENED);
 		if (ret)
 			return ret;
 
