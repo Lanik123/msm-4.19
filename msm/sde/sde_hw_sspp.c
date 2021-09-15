@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -295,13 +296,53 @@ static void sde_hw_sspp_set_src_split_order(struct sde_hw_pipe *ctx,
 	SDE_REG_WRITE(c, op_mode_off + idx, opmode);
 }
 
+/* replace non-matching components of the unpack pattern with C3_ALPHA */
+static u32 unpack_filter(u32 unpack, u8 keep)
+{
+	u32 result = 0, shift = 0, val = 0;
+
+	while (unpack > 0) {
+		val = (unpack & 0xff);
+
+		result |= (((val == keep) ? val : C3_ALPHA) << shift);
+		unpack >>= 8;
+		shift += 8;
+	}
+
+	return result;
+}
+
+static u32 sde_layer_color_unpack(
+		enum sde_color_component layer_color, u32 unpack)
+{
+	u32 unpack_color = unpack;
+	/* modify unpack to only use a single color channel */
+	switch (layer_color) {
+	case SDE_LAYER_COLOR_RED:
+		/* e.g. 0x03030302 */
+		unpack_color = unpack_filter(unpack, C2_R_Cr);
+		break;
+	case SDE_LAYER_COLOR_GREEN:
+		unpack_color = unpack_filter(unpack, C0_G_Y);
+		break;
+	case SDE_LAYER_COLOR_BLUE:
+		unpack_color = unpack_filter(unpack, C1_B_Cb);
+		break;
+	default:
+		break;
+	}
+
+	return unpack_color;
+}
+
 /**
  * Setup source pixel format, flip,
  */
 static void sde_hw_sspp_setup_format(struct sde_hw_pipe *ctx,
 		const struct sde_format *fmt,
 		bool const_alpha_en, u32 flags,
-		enum sde_sspp_multirect_index rect_mode)
+		enum sde_sspp_multirect_index rect_mode,
+		enum sde_color_component layer_color)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 chroma_samp, unpack, src_format;
@@ -357,6 +398,7 @@ static void sde_hw_sspp_setup_format(struct sde_hw_pipe *ctx,
 		src_format |= BIT(22);
 
 	unpack = SDE_UNPACK_FORMAT_SETUP(fmt);
+	unpack = sde_layer_color_unpack(layer_color, unpack);
 
 	src_format |= ((fmt->unpack_count - 1) << 12) |
 		(fmt->unpack_tight << 17) |

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -425,6 +426,23 @@ enum sde_layout {
 	SDE_LAYOUT_LEFT,
 	SDE_LAYOUT_RIGHT,
 	SDE_LAYOUT_MAX,
+};
+
+/**
+ * enum sde_color_component
+ * Describes which color component to be extracted
+ * @SDE_LAYER_COLOR_NONE    : No color component to be extracted
+ * @SDE_LAYER_COLOR_RED     : Red color component to be extracted
+ * @SDE_LAYER_COLOR_GREEN   : Green color component to be extracted
+ * @SDE_LAYER_COLOR_BLUE    : blue color component to be extracted
+ * @SDE_LAYER_COLOR_MAX     :
+ */
+enum sde_color_component {
+	SDE_LAYER_COLOR_NONE = 0,
+	SDE_LAYER_COLOR_RED,
+	SDE_LAYER_COLOR_GREEN,
+	SDE_LAYER_COLOR_BLUE,
+	SDE_LAYER_COLOR_MAX,
 };
 
 /** struct sde_format - defines the format configuration which

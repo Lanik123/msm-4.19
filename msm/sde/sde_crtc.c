@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -587,6 +588,14 @@ static void _sde_crtc_setup_blend_cfg(struct sde_crtc_mixer *mixer,
 			}
 		}
 		break;
+	case SDE_DRM_BLEND_OP_LAYER_COLOR:
+		blend_op = SDE_BLEND_FG_ALPHA_FG_CONST |
+			SDE_BLEND_BG_ALPHA_BG_CONST;
+		fg_alpha = 0xff;
+		/* make sure other color channels aren't overwritten */
+		bg_alpha = 0xff;
+		break;
+
 	default:
 		/* do nothing */
 		break;
