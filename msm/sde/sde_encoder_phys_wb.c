@@ -1010,6 +1010,19 @@ static void sde_encoder_phys_wb_setup(
 	_sde_encoder_phys_wb_setup_cwb(phys_enc, true);
 }
 
+static void sde_encoder_phys_wb_ctl_start_irq(void *arg, int irq_idx)
+{
+	struct sde_encoder_phys_wb *wb_enc = arg;
+	struct sde_encoder_phys *phys_enc;
+
+	if (!wb_enc)
+		return;
+
+	phys_enc = &wb_enc->base;
+
+	SDE_EVT32_IRQ(DRMID(phys_enc->parent), WBID(wb_enc));
+}
+
 static void _sde_encoder_phys_wb_frame_done_helper(void *arg, bool frame_error)
 {
 	struct sde_encoder_phys_wb *wb_enc = arg;
@@ -1121,6 +1134,7 @@ static void sde_encoder_phys_wb_mode_set(
 	struct sde_hw_wb *hw_wb = wb_enc->hw_wb;
 	struct sde_rm_hw_iter iter;
 	int i, instance;
+	struct sde_encoder_irq *irq;
 
 	phys_enc->cached_mode = *adj_mode;
 	instance = phys_enc->split_role == ENC_ROLE_SLAVE ? 1 : 0;
@@ -1161,6 +1175,11 @@ static void sde_encoder_phys_wb_mode_set(
 			PTR_ERR(phys_enc->hw_cdm));
 		phys_enc->hw_cdm = NULL;
 	}
+
+	/* set ctl idx for ctl-start-irq */
+	irq = &phys_enc->irq[INTR_IDX_CTL_START];
+	irq->hw_idx = phys_enc->hw_ctl->idx;
+
 }
 
 static int sde_encoder_phys_wb_frame_timeout(struct sde_encoder_phys *phys_enc)
@@ -1689,7 +1708,7 @@ struct sde_encoder_phys *sde_encoder_phys_wb_init(
 	struct sde_encoder_phys_wb *wb_enc;
 	struct sde_hw_mdp *hw_mdp;
 	struct sde_encoder_irq *irq;
-	int ret = 0;
+	int ret = 0, i;
 
 	SDE_DEBUG("\n");
 
@@ -1768,65 +1787,60 @@ struct sde_encoder_phys *sde_encoder_phys_wb_init(
 	phys_enc->vblank_ctl_lock = p->vblank_ctl_lock;
 	atomic_set(&phys_enc->pending_retire_fence_cnt, 0);
 	init_waitqueue_head(&phys_enc->pending_kickoff_wq);
+	for (i = 0; i < INTR_IDX_MAX; i++) {
+		irq = &phys_enc->irq[i];
+		INIT_LIST_HEAD(&irq->cb.list);
+		irq->irq_idx = -EINVAL;
+		irq->hw_idx = -EINVAL;
+		irq->cb.arg = wb_enc;
+	}
 
 	irq = &phys_enc->irq[INTR_IDX_WB_DONE];
-	INIT_LIST_HEAD(&irq->cb.list);
 	irq->name = "wb_done";
 	irq->hw_idx =  wb_enc->hw_wb->idx;
-	irq->irq_idx = -1;
 	irq->intr_type = sde_encoder_phys_wb_get_intr_type(wb_enc->hw_wb);
 	irq->intr_idx = INTR_IDX_WB_DONE;
-	irq->cb.arg = wb_enc;
 	irq->cb.func = sde_encoder_phys_wb_done_irq;
 
+	irq = &phys_enc->irq[INTR_IDX_CTL_START];
+	irq->name = "ctl_start";
+	irq->intr_type = SDE_IRQ_TYPE_CTL_START;
+	irq->intr_idx = INTR_IDX_CTL_START;
+	irq->cb.func = sde_encoder_phys_wb_ctl_start_irq;
+
 	irq = &phys_enc->irq[INTR_IDX_PP1_OVFL];
-	INIT_LIST_HEAD(&irq->cb.list);
 	irq->name = "pp1_overflow";
 	irq->hw_idx = CWB_1;
-	irq->irq_idx = -1;
 	irq->intr_type = SDE_IRQ_TYPE_CWB_OVERFLOW;
 	irq->intr_idx = INTR_IDX_PP1_OVFL;
-	irq->cb.arg = wb_enc;
 	irq->cb.func = sde_encoder_phys_cwb_ovflow;
 
 	irq = &phys_enc->irq[INTR_IDX_PP2_OVFL];
-	INIT_LIST_HEAD(&irq->cb.list);
 	irq->name = "pp2_overflow";
 	irq->hw_idx = CWB_2;
-	irq->irq_idx = -1;
 	irq->intr_type = SDE_IRQ_TYPE_CWB_OVERFLOW;
 	irq->intr_idx = INTR_IDX_PP2_OVFL;
-	irq->cb.arg = wb_enc;
 	irq->cb.func = sde_encoder_phys_cwb_ovflow;
 
 	irq = &phys_enc->irq[INTR_IDX_PP3_OVFL];
-	INIT_LIST_HEAD(&irq->cb.list);
 	irq->name = "pp3_overflow";
 	irq->hw_idx = CWB_3;
-	irq->irq_idx = -1;
 	irq->intr_type = SDE_IRQ_TYPE_CWB_OVERFLOW;
 	irq->intr_idx = INTR_IDX_PP3_OVFL;
-	irq->cb.arg = wb_enc;
 	irq->cb.func = sde_encoder_phys_cwb_ovflow;
 
 	irq = &phys_enc->irq[INTR_IDX_PP4_OVFL];
-	INIT_LIST_HEAD(&irq->cb.list);
 	irq->name = "pp4_overflow";
 	irq->hw_idx = CWB_4;
-	irq->irq_idx = -1;
 	irq->intr_type = SDE_IRQ_TYPE_CWB_OVERFLOW;
 	irq->intr_idx = INTR_IDX_PP4_OVFL;
-	irq->cb.arg = wb_enc;
 	irq->cb.func = sde_encoder_phys_cwb_ovflow;
 
 	irq = &phys_enc->irq[INTR_IDX_PP5_OVFL];
-	INIT_LIST_HEAD(&irq->cb.list);
 	irq->name = "pp5_overflow";
 	irq->hw_idx = CWB_5;
-	irq->irq_idx = -1;
 	irq->intr_type = SDE_IRQ_TYPE_CWB_OVERFLOW;
 	irq->intr_idx = INTR_IDX_PP5_OVFL;
-	irq->cb.arg = wb_enc;
 	irq->cb.func = sde_encoder_phys_cwb_ovflow;
 
 	/* create internal buffer for disable logic */
