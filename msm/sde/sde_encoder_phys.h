@@ -290,6 +290,8 @@ struct sde_encoder_irq {
  *				scheduled. Decremented in irq handler
  * @pending_retire_fence_cnt:   Atomic counter tracking the pending retire
  *                              fences that have to be signalled.
+ * @pending_ctl_start_cnt:      Atomic counter tracking the pending
+ *				ctl-start-irq, used to release commit thread.
  * @pending_kickoff_wq:		Wait queue for blocking until kickoff completes
  * @irq:			IRQ tracking structures
  * @has_intf_te:		Interface TE configuration support
@@ -334,6 +336,7 @@ struct sde_encoder_phys {
 	atomic_t underrun_cnt;
 	atomic_t pending_kickoff_cnt;
 	atomic_t pending_retire_fence_cnt;
+	atomic_t pending_ctl_start_cnt;
 	wait_queue_head_t pending_kickoff_wq;
 	struct sde_encoder_irq irq[INTR_IDX_MAX];
 	bool has_intf_te;
@@ -423,8 +426,8 @@ struct sde_encoder_phys_cmd {
  * @wb_fmt:		Writeback pixel format
  * @wb_fb:		Pointer to current writeback framebuffer
  * @wb_aspace:		Pointer to current writeback address space
- * @cwb_old_fb:		Pointer to old writeback framebuffer
- * @cwb_old_aspace:	Pointer to old writeback address space
+ * @old_fb:		Pointer to old writeback framebuffer
+ * @old_aspace:		Pointer to old writeback address space
  * @aspace:		address space identifier for non-secure/secure domain
  * @wb_dev:		Pointer to writeback device
  * @bo_disable:		Buffer object(s) to use during the disabling state
@@ -441,8 +444,8 @@ struct sde_encoder_phys_wb {
 	const struct sde_format *wb_fmt;
 	struct drm_framebuffer *wb_fb;
 	struct msm_gem_address_space *wb_aspace;
-	struct drm_framebuffer *cwb_old_fb;
-	struct msm_gem_address_space *cwb_old_aspace;
+	struct drm_framebuffer *old_fb;
+	struct msm_gem_address_space *old_aspace;
 	struct msm_gem_address_space *aspace[SDE_IOMMU_DOMAIN_MAX];
 	struct sde_wb_device *wb_dev;
 	struct drm_gem_object *bo_disable[SDE_MAX_PLANES];
