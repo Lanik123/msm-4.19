@@ -97,10 +97,9 @@ static void msm_flashlight_brightness_vince_set(struct led_classdev *led_cdev,
 	Define FLASH_ACTIVE_5V_ENABLE: If it supports QC3.0 charger;
 	Then we need to do call qpnp_flash_led_prepare() to enable flash triggers;
 	*/
-#ifdef FLASH_ACTIVE_5V_ENABLE
 	int32_t max_current = -EINVAL;
 	int32_t ret = 0;
-#endif
+
 	struct msm_flash_ctrl_t *flash_ctrl = flashlight_ctrl;
 
 	flashlight_brightness_value = value;
@@ -108,14 +107,12 @@ static void msm_flashlight_brightness_vince_set(struct led_classdev *led_cdev,
 		   __func__, __LINE__, value);
 	if (value == 0) {
 		/* Turn off flash triggers */
-#ifdef FLASH_ACTIVE_5V_ENABLE
 		ret = qpnp_flash_led_prepare(flash_ctrl->switch_trigger,
 						DISABLE_REGULATOR, &max_current);
 		if (ret < 0) {
 			pr_err("%s:%d regulator disable failed ret = %d\n",
 				__func__, __LINE__, ret);
 		}
-#endif
 		for (i = 0; i < flash_ctrl->torch_num_sources; i++)
 			if (flash_ctrl->torch_trigger[i])
 				led_trigger_event(
@@ -123,14 +120,12 @@ static void msm_flashlight_brightness_vince_set(struct led_classdev *led_cdev,
 		if (flash_ctrl->switch_trigger)
 			led_trigger_event(flash_ctrl->switch_trigger, 0);
 	} else {/* Turn on flash triggers */
-#ifdef FLASH_ACTIVE_5V_ENABLE
 		ret = qpnp_flash_led_prepare(flash_ctrl->switch_trigger,
 						ENABLE_REGULATOR, &max_current);
 		if (ret < 0) {
 			pr_err("%s:%d regulator enable failed ret = %d\n",
 				__func__, __LINE__, ret);
 		}
-#endif
 		for (i = 0; i < flash_ctrl->torch_num_sources; i++)
 			led_trigger_event(flash_ctrl->torch_trigger[i],
 							 flashlight_brightness_value);
