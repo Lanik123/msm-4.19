@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -199,6 +200,14 @@ void sde_encoder_kickoff(struct drm_encoder *encoder, bool is_error);
  */
 int sde_encoder_wait_for_event(struct drm_encoder *drm_encoder,
 						enum msm_event_wait event);
+
+/**
+ * sde_encoder_helper_get_skewed_vsync_status: Returns whether skewed-vsync
+ *			feature is enabled/disabled.
+ * @drm_enc:	encoder pointer
+ * Returns:	true/false if skew-vsync feature is enabled/disabled.
+ */
+bool sde_encoder_helper_get_skewed_vsync_status(struct drm_encoder *drm_enc);
 
 /**
  * sde_encoder_idle_request - request for idle request to avoid 4 vsync cycle

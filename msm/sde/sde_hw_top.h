@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
@@ -89,6 +89,16 @@ struct sde_vsync_source_cfg {
 	u32 ppnumber[PINGPONG_MAX];
 	u32 vsync_source;
 	bool is_dummy;
+};
+
+/**
+ * struct sde_intf_offset_cfg: Configure interface offset parameters.
+ * @set_master_intf: Select master interface
+ * @intf_offset_en: enable interface offset feature.
+ */
+struct sde_intf_offset_cfg {
+	bool intf_offset_en;
+	u8 set_master_intf;
 };
 
 /**
@@ -207,6 +217,14 @@ struct sde_hw_mdp_ops {
 	 * @enable: enable/disable hw events
 	 */
 	void (*set_mdp_hw_events)(struct sde_hw_mdp *mdp, bool enable);
+
+	/**
+	 * setup_skewed_vsync - Program skewed-vsync for interfaces
+	 * @mdp: mdp top context driver
+	 * @cfg: pointer to Interface-offset configuration structure
+	 */
+	void (*setup_skewed_vsync)(struct sde_hw_mdp *mdp,
+				struct sde_intf_offset_cfg *cfg);
 
 	/**
 	 * set_cwb_ppb_cntl - select the data point for CWB

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -697,6 +697,25 @@ int sde_encoder_helper_unregister_irq(struct sde_encoder_phys *phys_enc,
 	irq->irq_idx = -EINVAL;
 
 	return 0;
+}
+
+bool sde_encoder_helper_get_skewed_vsync_status(struct drm_encoder *drm_enc)
+{
+	struct msm_display_info *disp_info;
+	struct sde_encoder_virt *sde_enc;
+
+	if (!drm_enc) {
+		SDE_ERROR("invalid drm encoder\n");
+		return false;
+	}
+
+	sde_enc = to_sde_encoder_virt(drm_enc);
+	disp_info = &sde_enc->disp_info;
+
+	if (disp_info->skewed_vsync_master)
+		return true;
+
+	return false;
 }
 
 void sde_encoder_get_hw_resources(struct drm_encoder *drm_enc,
