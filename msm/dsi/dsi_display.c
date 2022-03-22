@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -5958,6 +5959,8 @@ int dsi_display_get_info(struct drm_connector *connector,
 	info->max_height = 1080;
 	info->qsync_min_fps =
 		display->panel->qsync_min_fps;
+	info->skewed_vsync_master =
+		display->panel->skewed_vsync_master;
 
 	switch (display->panel->panel_mode) {
 	case DSI_OP_VIDEO_MODE:

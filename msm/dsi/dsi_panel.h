@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2019, 2021, The Linux Foundation. All rights reserved.
  */
 
@@ -211,6 +212,7 @@ struct dsi_panel {
 	bool panel_initialized;
 	bool te_using_watchdog_timer;
 	u32 qsync_min_fps;
+	u8 skewed_vsync_master;
 
 	char dsc_pps_cmd[DSI_CMD_PPS_SIZE];
 	enum dsi_dms_mode dms_mode;
