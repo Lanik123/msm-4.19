@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2019, 2021, The Linux Foundation. All rights reserved.
  */
 
@@ -705,11 +706,13 @@ static int sde_encoder_phys_vid_control_vblank_irq(
 			atomic_read(&phys_enc->vblank_refcount));
 
 	if (enable && atomic_inc_return(&phys_enc->vblank_refcount) == 1) {
+		sde_encoder_helper_register_irq(phys_enc, INTR_IDX_LINEPTR);
 		ret = sde_encoder_helper_register_irq(phys_enc, INTR_IDX_VSYNC);
 		if (ret)
 			atomic_dec_return(&phys_enc->vblank_refcount);
 	} else if (!enable &&
 			atomic_dec_return(&phys_enc->vblank_refcount) == 0) {
+		sde_encoder_helper_unregister_irq(phys_enc, INTR_IDX_LINEPTR);
 		ret = sde_encoder_helper_unregister_irq(phys_enc,
 				INTR_IDX_VSYNC);
 		if (ret)
@@ -1191,16 +1194,9 @@ static void sde_encoder_phys_vid_irq_control(struct sde_encoder_phys *phys_enc,
 			return;
 
 		sde_encoder_helper_register_irq(phys_enc, INTR_IDX_UNDERRUN);
-		/*
-		 * IRQ will not be triggered unless a valid non-zero value
-		 * is written on the lineptr_conf register -
-		 * which will be controlled through the sysfs node write
-		 */
-		sde_encoder_helper_register_irq(phys_enc, INTR_IDX_LINEPTR);
 	} else {
 		sde_encoder_phys_vid_control_vblank_irq(phys_enc, false);
 		sde_encoder_helper_unregister_irq(phys_enc, INTR_IDX_UNDERRUN);
-		sde_encoder_helper_unregister_irq(phys_enc, INTR_IDX_LINEPTR);
 	}
 }
 
