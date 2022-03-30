@@ -864,6 +864,36 @@ void sde_encoder_helper_update_intf_cfg(
 				mode_3d);
 }
 
+void sde_encoder_helper_skewed_vsync_config(
+		struct sde_encoder_phys *phys_enc,
+		struct sde_intf_offset_cfg *cfg)
+{
+	struct sde_encoder_virt *sde_enc;
+	struct sde_hw_mdp *hw_mdptop;
+	struct msm_display_info *disp_info;
+
+	if (!phys_enc || !phys_enc->hw_mdptop || !phys_enc->parent) {
+		SDE_ERROR("invalid arg(s), encoder %d\n", !!phys_enc);
+		return;
+	}
+
+	sde_enc = to_sde_encoder_virt(phys_enc->parent);
+	hw_mdptop = phys_enc->hw_mdptop;
+	disp_info = &sde_enc->disp_info;
+
+	if (!disp_info->skewed_vsync_master) {
+		SDE_DEBUG_ENC(sde_enc, "Skewed_vsync not enabled\n");
+		return;
+	}
+
+	cfg->intf_offset_en = true;
+	cfg->set_master_intf = disp_info->skewed_vsync_master;
+
+	if (phys_enc->split_role == ENC_ROLE_MASTER &&
+			hw_mdptop->ops.setup_skewed_vsync)
+		hw_mdptop->ops.setup_skewed_vsync(hw_mdptop, cfg);
+}
+
 void sde_encoder_helper_split_config(
 		struct sde_encoder_phys *phys_enc,
 		enum sde_intf interface)

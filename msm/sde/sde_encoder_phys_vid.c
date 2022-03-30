@@ -246,6 +246,22 @@ static u32 programmable_fetch_get_num_lines(
 	return actual_vfp_lines;
 }
 
+static void skewed_vsync_config(struct sde_encoder_phys *phys_enc,
+				      const struct intf_timing_params *timing)
+{
+	struct sde_intf_offset_cfg cfg = { 0 };
+
+	if (phys_enc->split_role != ENC_ROLE_MASTER &&
+			!phys_enc->hw_intf->ops.setup_skewed_vsync)
+		return;
+
+	sde_encoder_helper_skewed_vsync_config(phys_enc, &cfg);
+	if (!cfg.intf_offset_en)
+		return;
+
+	phys_enc->hw_intf->ops.setup_skewed_vsync(phys_enc->hw_intf, &cfg);
+}
+
 /*
  * programmable_fetch_config: Programs HW to prefetch lines by offsetting
  *	the start of fetch into the vertical front porch for cases where the
@@ -460,9 +476,10 @@ static void sde_encoder_phys_vid_setup_timing_engine(
 				&intf_cfg);
 	}
 	spin_unlock_irqrestore(phys_enc->enc_spinlock, lock_flags);
-	if (phys_enc->hw_intf->cap->type == INTF_DSI)
+	if (phys_enc->hw_intf->cap->type == INTF_DSI) {
 		programmable_fetch_config(phys_enc, &timing_params);
-
+		skewed_vsync_config(phys_enc, &timing_params);
+	}
 exit:
 	if (phys_enc->parent_ops.get_qsync_fps)
 		phys_enc->parent_ops.get_qsync_fps(

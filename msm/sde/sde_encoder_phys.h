@@ -634,6 +634,17 @@ void sde_encoder_helper_split_config(
 		enum sde_intf interface);
 
 /**
+ * sde_encoder_helper_skewed_vsync_config - skewed vsync config helper func
+ *	This helper function may be used by physical encoders to configure
+ *	the skewed_vsync/intf_offset related registers.
+ * @phys_enc: Pointer to physical encoder structure
+ * @cfg: pointer to sde_intf_offset_cfg structure
+ */
+void sde_encoder_helper_skewed_vsync_config(
+		struct sde_encoder_phys *phys_enc,
+		struct sde_intf_offset_cfg *cfg);
+
+/**
  * sde_encoder_helper_reset_mixers - reset mixers associated with phys enc
  * @phys_enc: Pointer to physical encoder structure
  * @fb: Optional fb for specifying new mixer output resolution, may be NULL
