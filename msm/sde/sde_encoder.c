@@ -193,6 +193,7 @@ enum sde_enc_rc_states {
  @qdss_status:		indicate if qdss is modified since last update
  * @crtc_vblank_cb:	Callback into the upper layer / CRTC for
  *			notification of the VBLANK
+* @crtc_vblank2_cb :    Callback to notify secondary vblank to upper layers
  * @crtc_vblank_cb_data:	Data from upper layer for VBLANK notification
  * @crtc_kickoff_cb:		Callback into CRTC that will flush & start
  *				all CTL paths
@@ -267,6 +268,7 @@ struct sde_encoder_virt {
 	bool qdss_status;
 
 	void (*crtc_vblank_cb)(void *data);
+	void (*crtc_vblank2_cb)(void *data);
 	void *crtc_vblank_cb_data;
 
 	struct dentry *debugfs_root;
@@ -4190,6 +4192,18 @@ static void sde_encoder_vblank_callback(struct drm_encoder *drm_enc,
 	SDE_ATRACE_BEGIN("encoder_vblank_callback");
 	sde_enc = to_sde_encoder_virt(drm_enc);
 
+	/**
+	 * For SLAVE encoder when vsync_skew is enabled, avoid irq-handling
+	 * by returning early and only report the irq to framework using
+	 * the slave/secondary callback function
+	 */
+	if (phy_enc->split_role == ENC_ROLE_SLAVE) {
+		spin_lock_irqsave(&sde_enc->enc_spinlock, lock_flags);
+		if (sde_enc->crtc_vblank2_cb)
+			sde_enc->crtc_vblank2_cb(sde_enc->crtc_vblank_cb_data);
+		spin_unlock_irqrestore(&sde_enc->enc_spinlock, lock_flags);
+		goto end;
+	}
 	spin_lock_irqsave(&sde_enc->enc_spinlock, lock_flags);
 	if (sde_enc->crtc_vblank_cb)
 		sde_enc->crtc_vblank_cb(sde_enc->crtc_vblank_cb_data);
@@ -4199,6 +4213,7 @@ static void sde_encoder_vblank_callback(struct drm_encoder *drm_enc,
 			phy_enc->sde_kms->catalog->uidle_cfg.debugfs_perf)
 		sde_encoder_perf_uidle_status(phy_enc->sde_kms, sde_enc->crtc);
 
+end:
 	atomic_inc(&phy_enc->vsync_cnt);
 	SDE_ATRACE_END("encoder_vblank_callback");
 }
@@ -4243,7 +4258,7 @@ static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
 }
 
 void sde_encoder_register_vblank_callback(struct drm_encoder *drm_enc,
-		void (*vbl_cb)(void *), void *vbl_data)
+		void (*vbl_cb)(void *), void (*vbl2_cb)(void *), void *vbl_data)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	unsigned long lock_flags;
@@ -4261,6 +4276,7 @@ void sde_encoder_register_vblank_callback(struct drm_encoder *drm_enc,
 
 	spin_lock_irqsave(&sde_enc->enc_spinlock, lock_flags);
 	sde_enc->crtc_vblank_cb = vbl_cb;
+	sde_enc->crtc_vblank2_cb = vbl2_cb;
 	sde_enc->crtc_vblank_cb_data = vbl_data;
 	spin_unlock_irqrestore(&sde_enc->enc_spinlock, lock_flags);
 

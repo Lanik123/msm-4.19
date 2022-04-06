@@ -110,7 +110,7 @@ void sde_encoder_get_hw_resources(struct drm_encoder *encoder,
  * @data:	user data provided to callback
  */
 void sde_encoder_register_vblank_callback(struct drm_encoder *encoder,
-		void (*cb)(void *), void *data);
+		void (*cb)(void *), void (*cb2)(void *), void *data);
 
 /**
  * sde_encoder_register_frame_event_callback - provide callback to encoder that

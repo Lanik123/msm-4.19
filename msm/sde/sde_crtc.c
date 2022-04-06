@@ -386,7 +386,24 @@ static ssize_t vsync_event_show(struct device *device,
 	crtc = dev_get_drvdata(device);
 	sde_crtc = to_sde_crtc(crtc);
 	return scnprintf(buf, PAGE_SIZE, "VSYNC=%llu\n",
-			ktime_to_ns(sde_crtc->vblank_last_cb_time));
+			ktime_to_ns(sde_crtc->vblank_last_cb_time[VBLANK_0]));
+}
+
+static ssize_t vsync2_event_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_crtc *crtc;
+	struct sde_crtc *sde_crtc;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	crtc = dev_get_drvdata(device);
+	sde_crtc = to_sde_crtc(crtc);
+	return scnprintf(buf, PAGE_SIZE, "VSYNC2=%llu\n",
+			ktime_to_ns(sde_crtc->vblank_last_cb_time[VBLANK_1]));
 }
 
 static ssize_t lineptr_event_show(struct device *device,
@@ -472,11 +489,13 @@ static ssize_t lineptr_value_store(struct device *device,
 static DEVICE_ATTR_RO(lineptr_event);
 static DEVICE_ATTR_WO(lineptr_value);
 static DEVICE_ATTR_RO(vsync_event);
+static DEVICE_ATTR_RO(vsync2_event);
 static DEVICE_ATTR_RO(measured_fps);
 static DEVICE_ATTR_RW(fps_periodicity_ms);
 
 static struct attribute *sde_crtc_dev_attrs[] = {
 	&dev_attr_vsync_event.attr,
+	&dev_attr_vsync2_event.attr,
 	&dev_attr_measured_fps.attr,
 	&dev_attr_fps_periodicity_ms.attr,
 	&dev_attr_lineptr_event.attr,
@@ -502,10 +521,15 @@ static void sde_crtc_destroy(struct drm_crtc *crtc)
 	if (!crtc)
 		return;
 
-	if (sde_crtc->vsync_event_sf)
-		sysfs_put(sde_crtc->vsync_event_sf);
+	if (sde_crtc->vsync_event_sf[VBLANK_0])
+		sysfs_put(sde_crtc->vsync_event_sf[VBLANK_0]);
+
+	if (sde_crtc->vsync_event_sf[VBLANK_1])
+		sysfs_put(sde_crtc->vsync_event_sf[VBLANK_1]);
+
 	if (sde_crtc->lineptr_event_sf)
 		sysfs_put(sde_crtc->lineptr_event_sf);
+
 	if (sde_crtc->sysfs_dev)
 		device_unregister(sde_crtc->sysfs_dev);
 
@@ -2498,16 +2522,40 @@ static void sde_crtc_vblank_cb(void *data)
 	struct drm_crtc *crtc = (struct drm_crtc *)data;
 	struct sde_crtc *sde_crtc = to_sde_crtc(crtc);
 
+	SDE_ATRACE_BEGIN("vblank_0_callback");
 	/* keep statistics on vblank callback - with auto reset via debugfs */
-	if (ktime_compare(sde_crtc->vblank_cb_time, ktime_set(0, 0)) == 0)
-		sde_crtc->vblank_cb_time = ktime_get();
+	if (ktime_compare(sde_crtc->vblank_cb_time[VBLANK_0],
+			ktime_set(0, 0)) == 0)
+		sde_crtc->vblank_cb_time[VBLANK_0] = ktime_get();
 	else
-		sde_crtc->vblank_cb_count++;
+		sde_crtc->vblank_cb_count[VBLANK_0]++;
 
-	sde_crtc->vblank_last_cb_time = ktime_get();
-	sysfs_notify_dirent(sde_crtc->vsync_event_sf);
-
+	sde_crtc->vblank_last_cb_time[VBLANK_0] = ktime_get();
+	sysfs_notify_dirent(sde_crtc->vsync_event_sf[VBLANK_0]);
 	drm_crtc_handle_vblank(crtc);
+
+	SDE_ATRACE_END("vblank_0_callback");
+	DRM_DEBUG_VBL("crtc%d\n", crtc->base.id);
+	SDE_EVT32_VERBOSE(DRMID(crtc));
+}
+
+static void sde_crtc_vblank2_cb(void *data)
+{
+	struct drm_crtc *crtc = (struct drm_crtc *)data;
+	struct sde_crtc *sde_crtc = to_sde_crtc(crtc);
+
+	SDE_ATRACE_BEGIN("vblank_1_callback");
+	/* keep statistics on vblank callback - with auto reset via debugfs */
+	if (ktime_compare(sde_crtc->vblank_cb_time[VBLANK_1],
+			ktime_set(0, 0)) == 0)
+		sde_crtc->vblank_cb_time[VBLANK_1] = ktime_get();
+	else
+		sde_crtc->vblank_cb_count[VBLANK_1]++;
+
+	sde_crtc->vblank_last_cb_time[VBLANK_1] = ktime_get();
+	sysfs_notify_dirent(sde_crtc->vsync_event_sf[VBLANK_1]);
+
+	SDE_ATRACE_END("vblank_1_callback");
 	DRM_DEBUG_VBL("crtc%d\n", crtc->base.id);
 	SDE_EVT32_VERBOSE(DRMID(crtc));
 }
@@ -3936,7 +3984,8 @@ static int _sde_crtc_vblank_enable_no_lock(
 					sde_crtc->enabled);
 
 			sde_encoder_register_vblank_callback(enc,
-					sde_crtc_vblank_cb, (void *)crtc);
+				sde_crtc_vblank_cb, sde_crtc_vblank2_cb,
+						(void *)crtc);
 		}
 	} else {
 		drm_for_each_encoder_mask(enc, crtc->dev,
@@ -3944,7 +3993,8 @@ static int _sde_crtc_vblank_enable_no_lock(
 			SDE_EVT32(DRMID(&sde_crtc->base), DRMID(enc), enable,
 					sde_crtc->enabled);
 
-			sde_encoder_register_vblank_callback(enc, NULL, NULL);
+			sde_encoder_register_vblank_callback
+						(enc, NULL, NULL, NULL);
 		}
 
 		/* drop lock since power crtc cb may try to re-acquire lock */
@@ -5945,20 +5995,24 @@ static int _sde_debugfs_status_show(struct seq_file *s, void *data)
 		seq_puts(s, "\n");
 	}
 
-	if (sde_crtc->vblank_cb_count) {
-		ktime_t diff = ktime_sub(ktime_get(), sde_crtc->vblank_cb_time);
-		u32 diff_ms = ktime_to_ms(diff);
-		u64 fps = diff_ms ? DIV_ROUND_CLOSEST(
-				sde_crtc->vblank_cb_count * 1000, diff_ms) : 0;
+	for (i = 0; i < SDE_CRTC_MAX_VBLANKS; i++) {
+		if (sde_crtc->vblank_cb_count[i]) {
+			ktime_t diff = ktime_sub(ktime_get(),
+				sde_crtc->vblank_cb_time[i]);
+			u32 diff_ms = ktime_to_ms(diff);
+			u64 fps = diff_ms ? DIV_ROUND_CLOSEST(
+				sde_crtc->vblank_cb_count[i] * 1000,
+							diff_ms) : 0;
 
-		seq_printf(s,
+			seq_printf(s,
 			"vblank fps:%lld count:%u total:%llums total_framecount:%llu\n",
-				fps, sde_crtc->vblank_cb_count,
+				fps, sde_crtc->vblank_cb_count[i],
 				ktime_to_ms(diff), sde_crtc->play_count);
 
-		/* reset time & count for next measurement */
-		sde_crtc->vblank_cb_count = 0;
-		sde_crtc->vblank_cb_time = ktime_set(0, 0);
+			/* reset time & count for next measurement */
+			sde_crtc->vblank_cb_count[i] = 0;
+			sde_crtc->vblank_cb_time[i] = ktime_set(0, 0);
+		}
 	}
 
 	mutex_unlock(&sde_crtc->crtc_lock);
@@ -6569,10 +6623,15 @@ int sde_crtc_post_init(struct drm_device *dev, struct drm_crtc *crtc)
 		goto end;
 	}
 
-	sde_crtc->vsync_event_sf = sysfs_get_dirent(
+	sde_crtc->vsync_event_sf[VBLANK_0] = sysfs_get_dirent(
 		sde_crtc->sysfs_dev->kobj.sd, "vsync_event");
-	if (!sde_crtc->vsync_event_sf)
+	if (!sde_crtc->vsync_event_sf[VBLANK_0])
 		SDE_ERROR("crtc:%d vsync_event sysfs create failed\n",
+						crtc->base.id);
+	sde_crtc->vsync_event_sf[VBLANK_1] = sysfs_get_dirent(
+		sde_crtc->sysfs_dev->kobj.sd, "vsync2_event");
+	if (!sde_crtc->vsync_event_sf[VBLANK_1])
+		SDE_ERROR("crtc:%d vsync2_event sysfs create failed\n",
 						crtc->base.id);
 	sde_crtc->lineptr_event_sf = sysfs_get_dirent(
 		sde_crtc->sysfs_dev->kobj.sd, "lineptr_event");
