@@ -2528,6 +2528,10 @@ static int _sde_connector_install_properties(struct drm_device *dev,
 			0x0, 0, AUTOREFRESH_MAX_FRAME_CNT, 0,
 			CONNECTOR_PROP_AUTOREFRESH);
 
+	msm_property_install_range(&c_conn->property_info, "skew_vsync",
+			0x0, 0, MAX_SKEW_VSYNC_PERCENTAGE, 50,
+			CONNECTOR_PROP_SKEW_VSYNC);
+
 	if (connector_type == DRM_MODE_CONNECTOR_DSI) {
 		if (sde_kms->catalog->has_qsync && display_info->qsync_min_fps)
 			msm_property_install_enum(&c_conn->property_info,

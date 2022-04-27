@@ -39,6 +39,9 @@
 #define IDLE_POWERCOLLAPSE_DURATION	(66 - 16/2)
 #define IDLE_POWERCOLLAPSE_IN_EARLY_WAKEUP (200 - 16/2)
 
+#define MIN_SKEW_VSYNC_PERCENTAGE 10
+#define MAX_SKEW_VSYNC_PERCENTAGE 75
+
 /**
  * Encoder functions and data types
  * @intfs:	Interfaces this encoder is using, INTF_MODE_NONE if unused

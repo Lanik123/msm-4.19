@@ -93,10 +93,12 @@ struct sde_vsync_source_cfg {
 
 /**
  * struct sde_intf_offset_cfg: Configure interface offset parameters.
+ * @offset_percentage: offset value in percentage
  * @set_master_intf: Select master interface
  * @intf_offset_en: enable interface offset feature.
  */
 struct sde_intf_offset_cfg {
+	u32 offset_percentage;
 	bool intf_offset_en;
 	u8 set_master_intf;
 };

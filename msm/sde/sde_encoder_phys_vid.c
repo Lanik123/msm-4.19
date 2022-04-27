@@ -250,11 +250,35 @@ static void skewed_vsync_config(struct sde_encoder_phys *phys_enc,
 				      const struct intf_timing_params *timing)
 {
 	struct sde_intf_offset_cfg cfg = { 0 };
+	struct drm_connector *drm_conn;
+	struct sde_encoder_phys_vid *vid_enc =
+			to_sde_encoder_phys_vid(phys_enc);
 
 	if (phys_enc->split_role != ENC_ROLE_MASTER &&
 			!phys_enc->hw_intf->ops.setup_skewed_vsync)
 		return;
 
+	drm_conn = phys_enc->connector;
+	if (!drm_conn || !drm_conn->state) {
+		SDE_ERROR("No reference to drm_connector\n");
+		return;
+	}
+
+	cfg.offset_percentage = sde_connector_get_property(drm_conn->state,
+						CONNECTOR_PROP_SKEW_VSYNC);
+
+	if (!cfg.offset_percentage) {
+		SDE_DEBUG_VIDENC(vid_enc,
+			"conn_prop: No value set for Skewed_vsync\n");
+		cfg.offset_percentage = 50; /* Default */
+	} else if (cfg.offset_percentage > MAX_SKEW_VSYNC_PERCENTAGE) {
+		cfg.offset_percentage = MAX_SKEW_VSYNC_PERCENTAGE;
+	} else if (cfg.offset_percentage < MIN_SKEW_VSYNC_PERCENTAGE) {
+		cfg.offset_percentage = MIN_SKEW_VSYNC_PERCENTAGE;
+	}
+	SDE_DEBUG_VIDENC(vid_enc,
+		 "skewed_vsync offset_percentage is set to: %u\n",
+						cfg.offset_percentage);
 	sde_encoder_helper_skewed_vsync_config(phys_enc, &cfg);
 	if (!cfg.intf_offset_en)
 		return;

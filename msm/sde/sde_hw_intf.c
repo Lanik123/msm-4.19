@@ -391,15 +391,18 @@ static void sde_hw_intf_setup_skewed_vsync(
 {
 	struct sde_hw_blk_reg_map *c = &intf->hw;
 	u32 prog_fetch_enable = 0, fetch_start = 0;
-	u32 intf_offset = 0, vsync_period;
+	u32 intf_offset = 0, vsync_period, prog_fetch_linecnt = 0;
 
 	prog_fetch_enable = SDE_REG_READ(c, INTF_CONFIG);
 	vsync_period = SDE_REG_READ(c, INTF_VSYNC_PERIOD_F0);
+	intf_offset = vsync_period * cfg->offset_percentage / 100;
 	if (prog_fetch_enable & BIT(31)) {
 		fetch_start = SDE_REG_READ(c, INTF_PROG_FETCH_START);
-		intf_offset = fetch_start - (vsync_period / 2);
-	} else {
-		intf_offset = vsync_period / 2;
+		prog_fetch_linecnt = vsync_period - fetch_start;
+		if (intf_offset >= prog_fetch_linecnt)
+			intf_offset = intf_offset - prog_fetch_linecnt;
+		else
+			intf_offset = fetch_start + intf_offset;
 	}
 	SDE_REG_WRITE(c, INTF_PROG_INTF_OFFSET_EN, intf_offset);
 }
