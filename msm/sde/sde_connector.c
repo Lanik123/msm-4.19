@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -46,6 +46,8 @@ static const struct drm_prop_enum_list e_topology_name[] = {
 	{SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE,	"sde_quadpipemerge"},
 	{SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE_DSC,	"sde_quadpipe_3dmerge_dsc"},
 	{SDE_RM_TOPOLOGY_QUADPIPE_DSCMERGE,	"sde_quadpipe_dscmerge"},
+	{SDE_RM_TOPOLOGY_QUADPIPE_DSCMERGE_DUALCTL,
+				"sde_quadpipe_dscmerge_dualctl"},
 	{SDE_RM_TOPOLOGY_QUADPIPE_DSC4HSMERGE,	"sde_quadpipe_dsc4hsmerge"},
 };
 static const struct drm_prop_enum_list e_topology_control[] = {

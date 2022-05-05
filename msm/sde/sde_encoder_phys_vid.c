@@ -705,9 +705,11 @@ static int sde_encoder_phys_vid_control_vblank_irq(
 	refcount = atomic_read(&phys_enc->vblank_refcount);
 	vid_enc = to_sde_encoder_phys_vid(phys_enc);
 
-	/* Slave encoders don't report vblank */
+	/* Slave encoders don't report vblank except for enabled skew-vsync */
 	if (!sde_encoder_phys_vid_is_master(phys_enc))
-		goto end;
+		if (!sde_encoder_helper_get_skewed_vsync_status
+						(phys_enc->parent))
+			goto end;
 
 	/* protect against negative */
 	if (!enable && refcount == 0) {
@@ -1082,6 +1084,7 @@ static void sde_encoder_phys_vid_disable(struct sde_encoder_phys *phys_enc)
 	struct sde_encoder_phys_vid *vid_enc;
 	unsigned long lock_flags;
 	struct intf_status intf_status = {0};
+	bool vsync_skew_en = false;
 
 	if (!phys_enc || !phys_enc->parent || !phys_enc->parent->dev ||
 			!phys_enc->parent->dev->dev_private) {
@@ -1099,10 +1102,16 @@ static void sde_encoder_phys_vid_disable(struct sde_encoder_phys *phys_enc)
 
 	SDE_DEBUG_VIDENC(vid_enc, "\n");
 
+	vsync_skew_en = sde_encoder_helper_get_skewed_vsync_status
+						(phys_enc->parent);
+
 	if (WARN_ON(!phys_enc->hw_intf->ops.enable_timing))
 		return;
-	else if (!sde_encoder_phys_vid_is_master(phys_enc))
+	else if (!sde_encoder_phys_vid_is_master(phys_enc)) {
+		if (vsync_skew_en)
+			sde_encoder_helper_phys_disable(phys_enc, NULL);
 		goto exit;
+	}
 
 	if (phys_enc->enable_state == SDE_ENC_DISABLED) {
 		SDE_ERROR("already disabled\n");

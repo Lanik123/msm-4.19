@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -1505,6 +1506,9 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 				sde_kms->catalog->mixer_count - mixer_count : 0;
 	max_dp_dsc_count = sde_kms->catalog->dsc_count > dsc_count ?
 				sde_kms->catalog->dsc_count - dsc_count : 0;
+
+	if (info.skewed_vsync_master)
+		sde_kms->rm.vsync_skew_supported = true;
 
 	/* wb */
 	for (i = 0; i < sde_kms->wb_display_count &&
