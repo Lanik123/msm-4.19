@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
@@ -139,6 +140,16 @@ struct sde_hw_mdp_ops {
 	 */
 	bool (*setup_clk_force_ctrl)(struct sde_hw_mdp *mdp,
 			enum sde_clk_ctrl_type clk_ctrl, bool enable);
+
+	/**
+	 * get_clk_ctrl_status - get clock control status
+	 * @mdp: mdp top context driver
+	 * @clk_ctrl: clock to be controlled
+	 * @status: returns true if clock is on
+	 * @return: 0 if success, otherwise return code
+	 */
+	int (*get_clk_ctrl_status)(struct sde_hw_mdp *mdp,
+			enum sde_clk_ctrl_type clk_ctrl, bool *status);
 
 	/**
 	 * setup_dce - set DCE mux for DSC ctrl path

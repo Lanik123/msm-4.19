@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -289,6 +290,8 @@ struct sde_encoder_irq {
  *				scheduled. Decremented in irq handler
  * @pending_retire_fence_cnt:   Atomic counter tracking the pending retire
  *                              fences that have to be signalled.
+ * @pending_ctl_start_cnt:      Atomic counter tracking the pending
+ *				ctl-start-irq, used to release commit thread.
  * @pending_kickoff_wq:		Wait queue for blocking until kickoff completes
  * @irq:			IRQ tracking structures
  * @has_intf_te:		Interface TE configuration support
@@ -333,6 +336,7 @@ struct sde_encoder_phys {
 	atomic_t underrun_cnt;
 	atomic_t pending_kickoff_cnt;
 	atomic_t pending_retire_fence_cnt;
+	atomic_t pending_ctl_start_cnt;
 	wait_queue_head_t pending_kickoff_wq;
 	struct sde_encoder_irq irq[INTR_IDX_MAX];
 	bool has_intf_te;
@@ -416,21 +420,16 @@ struct sde_encoder_phys_cmd {
  * @base:		Baseclass physical encoder structure
  * @hw_wb:		Hardware interface to the wb registers
  * @wbdone_timeout:	Timeout value for writeback done in msec
- * @bypass_irqreg:	Bypass irq register/unregister if non-zero
  * @wb_cfg:		Writeback hardware configuration
  * @cdp_cfg:		Writeback CDP configuration
  * @wb_roi:		Writeback region-of-interest
  * @wb_fmt:		Writeback pixel format
  * @wb_fb:		Pointer to current writeback framebuffer
  * @wb_aspace:		Pointer to current writeback address space
- * @cwb_old_fb:		Pointer to old writeback framebuffer
- * @cwb_old_aspace:	Pointer to old writeback address space
- * @frame_count:	Counter of completed writeback operations
- * @kickoff_count:	Counter of issued writeback operations
+ * @old_fb:		Pointer to old writeback framebuffer
+ * @old_aspace:		Pointer to old writeback address space
  * @aspace:		address space identifier for non-secure/secure domain
  * @wb_dev:		Pointer to writeback device
- * @start_time:		Start time of writeback latest request
- * @end_time:		End time of writeback latest request
  * @bo_disable:		Buffer object(s) to use during the disabling state
  * @fb_disable:		Frame buffer to use during the disabling state
  * @crtc		Pointer to drm_crtc
@@ -439,21 +438,16 @@ struct sde_encoder_phys_wb {
 	struct sde_encoder_phys base;
 	struct sde_hw_wb *hw_wb;
 	u32 wbdone_timeout;
-	u32 bypass_irqreg;
 	struct sde_hw_wb_cfg wb_cfg;
 	struct sde_hw_wb_cdp_cfg cdp_cfg;
 	struct sde_rect wb_roi;
 	const struct sde_format *wb_fmt;
 	struct drm_framebuffer *wb_fb;
 	struct msm_gem_address_space *wb_aspace;
-	struct drm_framebuffer *cwb_old_fb;
-	struct msm_gem_address_space *cwb_old_aspace;
-	u32 frame_count;
-	u32 kickoff_count;
+	struct drm_framebuffer *old_fb;
+	struct msm_gem_address_space *old_aspace;
 	struct msm_gem_address_space *aspace[SDE_IOMMU_DOMAIN_MAX];
 	struct sde_wb_device *wb_dev;
-	ktime_t start_time;
-	ktime_t end_time;
 	struct drm_gem_object *bo_disable[SDE_MAX_PLANES];
 	struct drm_framebuffer *fb_disable;
 	struct drm_crtc *crtc;

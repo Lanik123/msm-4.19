@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (C) 2014-2021 The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -1410,7 +1411,8 @@ static int _sde_plane_color_fill(struct sde_plane *psde,
 			psde->pipe_hw->ops.setup_format(psde->pipe_hw,
 					fmt, blend_enable,
 					SDE_SSPP_SOLID_FILL,
-					pstate->multirect_index);
+					pstate->multirect_index,
+					pstate->layer_color);
 
 		if (psde->pipe_hw->ops.setup_rects)
 			psde->pipe_hw->ops.setup_rects(psde->pipe_hw,
@@ -2782,7 +2784,8 @@ static void _sde_plane_map_prop_to_dirty_bits(void)
 	plane_prop_array[PLANE_PROP_INFO] =
 	plane_prop_array[PLANE_PROP_ALPHA] =
 	plane_prop_array[PLANE_PROP_INPUT_FENCE] =
-	plane_prop_array[PLANE_PROP_BLEND_OP] = 0;
+	plane_prop_array[PLANE_PROP_BLEND_OP] =
+	plane_prop_array[PLANE_PROP_LAYER_COLOR] = 0;
 
 	plane_prop_array[PLANE_PROP_FB_TRANSLATION_MODE] =
 		SDE_PLANE_DIRTY_FB_TRANSLATION_MODE;
@@ -2998,6 +3001,7 @@ static void _sde_plane_update_format_and_rects(struct sde_plane *psde,
 	struct sde_plane_state *pstate, const struct sde_format *fmt)
 {
 	uint32_t src_flags = 0;
+	uint32_t layer_color = 0;
 
 	SDE_DEBUG_PLANE(psde, "rotation 0x%X\n", pstate->rotation);
 	if (pstate->rotation & DRM_MODE_REFLECT_X)
@@ -3007,10 +3011,12 @@ static void _sde_plane_update_format_and_rects(struct sde_plane *psde,
 	if (pstate->rotation & DRM_MODE_ROTATE_90)
 		src_flags |= SDE_SSPP_ROT_90;
 
+	layer_color = sde_plane_get_property(pstate, PLANE_PROP_LAYER_COLOR);
+
 	/* update format */
 	psde->pipe_hw->ops.setup_format(psde->pipe_hw, fmt,
 	   pstate->const_alpha_en, src_flags,
-	   pstate->multirect_index);
+	   pstate->multirect_index, layer_color);
 
 	if (psde->pipe_hw->ops.setup_cdp) {
 		struct sde_hw_pipe_cdp_cfg *cdp_cfg = &pstate->cdp_cfg;
@@ -3429,7 +3435,8 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 		{SDE_DRM_BLEND_OP_NOT_DEFINED,    "not_defined"},
 		{SDE_DRM_BLEND_OP_OPAQUE,         "opaque"},
 		{SDE_DRM_BLEND_OP_PREMULTIPLIED,  "premultiplied"},
-		{SDE_DRM_BLEND_OP_COVERAGE,       "coverage"}
+		{SDE_DRM_BLEND_OP_COVERAGE,       "coverage"},
+		{SDE_DRM_BLEND_OP_LAYER_COLOR,    "layer_color"}
 	};
 	static const struct drm_prop_enum_list e_src_config[] = {
 		{SDE_DRM_DEINTERLACE, "deinterlace"}
@@ -3449,6 +3456,12 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 		{SDE_LAYOUT_NONE, "none"},
 		{SDE_LAYOUT_LEFT, "left"},
 		{SDE_LAYOUT_RIGHT, "right"},
+	};
+	static const struct drm_prop_enum_list e_layer_color[] = {
+		{SDE_LAYER_COLOR_NONE, "none"},
+		{SDE_LAYER_COLOR_RED, "red"},
+		{SDE_LAYER_COLOR_GREEN, "green"},
+		{SDE_LAYER_COLOR_BLUE, "blue"},
 	};
 	const struct sde_format_extended *format_list;
 	struct sde_kms_info *info;
@@ -3513,6 +3526,10 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 
 	msm_property_install_enum(&psde->property_info, "sspp_layout", 0x0, 0,
 		e_layout_index, ARRAY_SIZE(e_layout_index), PLANE_PROP_LAYOUT);
+
+	msm_property_install_enum(&psde->property_info,
+		"layer_color_component", 0x0, 0, e_layer_color,
+		ARRAY_SIZE(e_layer_color), PLANE_PROP_LAYER_COLOR);
 
 	if (psde->pipe_hw->ops.setup_solidfill)
 		msm_property_install_range(&psde->property_info, "color_fill",

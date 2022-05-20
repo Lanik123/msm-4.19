@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -737,6 +738,7 @@ struct sde_clk_ctrl_reg {
  * @has_dest_scaler:   indicates support of destination scaler
  * @smart_panel_align_mode: split display smart panel align modes
  * @clk_ctrls          clock control register definition
+ * @clk_status         clock status register definition
  */
 struct sde_mdp_cfg {
 	SDE_HW_BLK_INFO;
@@ -746,6 +748,7 @@ struct sde_mdp_cfg {
 	bool has_dest_scaler;
 	u32 smart_panel_align_mode;
 	struct sde_clk_ctrl_reg clk_ctrls[SDE_CLK_CTRL_MAX];
+	struct sde_clk_ctrl_reg clk_status[SDE_CLK_CTRL_MAX];
 };
 
 /* struct sde_uidle_cfg : MDP TOP-BLK instance info
