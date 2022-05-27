@@ -1776,6 +1776,7 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 	struct sde_hw_mdp *hw_mdp;
 	struct sde_splash_display *splash_display;
 	u8 intf_sel;
+	int valid_ctl_blks = 0;
 
 	if (!priv || !rm || !cat || !splash_data) {
 		SDE_ERROR("invalid input parameters\n");
@@ -1796,6 +1797,9 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 	sde_kms = to_sde_kms(priv->kms);
 
 	hw_mdp = sde_rm_get_mdp(rm);
+
+	if (rm->vsync_skew_supported)
+		valid_ctl_blks = DUAL_CTL;
 
 	sde_rm_init_hw_iter(&iter_c, 0, SDE_HW_BLK_CTL);
 	while (_sde_rm_get_hw_locked(rm, &iter_c)
@@ -1819,7 +1823,9 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 			splash_display->ctl_ids[splash_display->ctl_cnt++] =
 				iter_c.blk->id;
 		}
-		index++;
+		valid_ctl_blks--;
+		if (valid_ctl_blks == 0)
+			index++;
 	}
 
 	return 0;
