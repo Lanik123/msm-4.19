@@ -1,4 +1,4 @@
-//* drivers/input/touchscreen/gt1x_generic.h
+// drivers/input/touchscreen/gt1x_generic.h
 //
 // 2010 - 2016 Goodix Technology.
 //
@@ -38,7 +38,7 @@
 #include <linux/irq.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
-#include <linux/hqsysfs.h>
+#include <linux/uaccess.h>
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
