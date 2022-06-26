@@ -92,7 +92,7 @@ typedef struct {
 //#define _SHORT_HEAD                     4
 #define MAX_KEY_RAWDATA                 42
 #define GTP_TEST_PARAMS_FROM_INI        1
-#define GTP_SAVE_TEST_DATA              1
+#define GTP_SAVE_TEST_DATA              0
 #define FLOAT_AMPLIFIER                 1000
 
 #define	RESULT_INVALID			0
