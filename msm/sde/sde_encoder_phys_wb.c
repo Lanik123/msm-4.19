@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -1029,6 +1029,7 @@ static void _sde_encoder_phys_wb_frame_done_helper(void *arg, bool frame_error)
 {
 	struct sde_encoder_phys_wb *wb_enc = arg;
 	struct sde_encoder_phys *phys_enc = &wb_enc->base;
+	struct sde_hw_ctl *hw_ctl = phys_enc->hw_ctl;
 	u32 event = frame_error ? SDE_ENCODER_FRAME_EVENT_ERROR : 0;
 
 	/* don't notify upper layer for internal commit */
@@ -1050,6 +1051,17 @@ static void _sde_encoder_phys_wb_frame_done_helper(void *arg, bool frame_error)
 
 		phys_enc->parent_ops.handle_frame_done(phys_enc->parent,
 				phys_enc, event);
+	}
+
+	if (!phys_enc->in_clone_mode &&
+			(atomic_read(&phys_enc->pending_kickoff_cnt) >= 1) &&
+			hw_ctl && hw_ctl->ops.get_scheduler_status &&
+			(hw_ctl->ops.get_scheduler_status(hw_ctl) & BIT(0))) {
+		atomic_add_unless(&phys_enc->pending_kickoff_cnt, -1, 0);
+		phys_enc->parent_ops.handle_frame_done(phys_enc->parent,
+			phys_enc, event);
+		SDE_EVT32_IRQ(DRMID(phys_enc->parent), WBID(wb_enc),
+			event, phys_enc->pending_kickoff_cnt);
 	}
 
 	if (!phys_enc->in_clone_mode && phys_enc->parent_ops.handle_vblank_virt)
@@ -1638,6 +1650,7 @@ static void sde_encoder_phys_wb_disable(struct sde_encoder_phys *phys_enc)
 	 * sequence is executed.
 	 */
 	if (hw_wb->catalog->has_3d_merge_reset) {
+		_sde_encoder_phys_wb_wait_for_idle(phys_enc, true);
 		sde_encoder_helper_phys_disable(phys_enc, wb_enc);
 		goto exit;
 	}
