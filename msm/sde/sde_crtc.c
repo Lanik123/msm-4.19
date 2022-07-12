@@ -5566,8 +5566,7 @@ static int _sde_crtc_get_output_fence(struct drm_crtc *crtc,
 	cstate = to_sde_crtc_state(state);
 
 	drm_for_each_encoder_mask(encoder, crtc->dev, state->encoder_mask) {
-		if (sde_encoder_check_curr_mode(encoder,
-						MSM_DISPLAY_VIDEO_MODE))
+		if (sde_encoder_get_intf_mode(encoder) == INTF_MODE_VIDEO)
 			is_vid = true;
 		if (is_vid)
 			break;
