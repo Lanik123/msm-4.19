@@ -246,6 +246,46 @@ static u32 programmable_fetch_get_num_lines(
 	return actual_vfp_lines;
 }
 
+static void skewed_vsync_config(struct sde_encoder_phys *phys_enc,
+				      const struct intf_timing_params *timing)
+{
+	struct sde_intf_offset_cfg cfg = { 0 };
+	struct drm_connector *drm_conn;
+	struct sde_encoder_phys_vid *vid_enc =
+			to_sde_encoder_phys_vid(phys_enc);
+
+	if (phys_enc->split_role != ENC_ROLE_MASTER &&
+			!phys_enc->hw_intf->ops.setup_skewed_vsync)
+		return;
+
+	drm_conn = phys_enc->connector;
+	if (!drm_conn || !drm_conn->state) {
+		SDE_ERROR("No reference to drm_connector\n");
+		return;
+	}
+
+	cfg.offset_percentage = sde_connector_get_property(drm_conn->state,
+						CONNECTOR_PROP_SKEW_VSYNC);
+
+	if (!cfg.offset_percentage) {
+		SDE_DEBUG_VIDENC(vid_enc,
+			"conn_prop: No value set for Skewed_vsync\n");
+		cfg.offset_percentage = 50; /* Default */
+	} else if (cfg.offset_percentage > MAX_SKEW_VSYNC_PERCENTAGE) {
+		cfg.offset_percentage = MAX_SKEW_VSYNC_PERCENTAGE;
+	} else if (cfg.offset_percentage < MIN_SKEW_VSYNC_PERCENTAGE) {
+		cfg.offset_percentage = MIN_SKEW_VSYNC_PERCENTAGE;
+	}
+	SDE_DEBUG_VIDENC(vid_enc,
+		 "skewed_vsync offset_percentage is set to: %u\n",
+						cfg.offset_percentage);
+	sde_encoder_helper_skewed_vsync_config(phys_enc, &cfg);
+	if (!cfg.intf_offset_en)
+		return;
+
+	phys_enc->hw_intf->ops.setup_skewed_vsync(phys_enc->hw_intf, &cfg);
+}
+
 /*
  * programmable_fetch_config: Programs HW to prefetch lines by offsetting
  *	the start of fetch into the vertical front porch for cases where the
@@ -460,9 +500,10 @@ static void sde_encoder_phys_vid_setup_timing_engine(
 				&intf_cfg);
 	}
 	spin_unlock_irqrestore(phys_enc->enc_spinlock, lock_flags);
-	if (phys_enc->hw_intf->cap->type == INTF_DSI)
+	if (phys_enc->hw_intf->cap->type == INTF_DSI) {
 		programmable_fetch_config(phys_enc, &timing_params);
-
+		skewed_vsync_config(phys_enc, &timing_params);
+	}
 exit:
 	if (phys_enc->parent_ops.get_qsync_fps)
 		phys_enc->parent_ops.get_qsync_fps(
@@ -688,9 +729,11 @@ static int sde_encoder_phys_vid_control_vblank_irq(
 	refcount = atomic_read(&phys_enc->vblank_refcount);
 	vid_enc = to_sde_encoder_phys_vid(phys_enc);
 
-	/* Slave encoders don't report vblank */
+	/* Slave encoders don't report vblank except for enabled skew-vsync */
 	if (!sde_encoder_phys_vid_is_master(phys_enc))
-		goto end;
+		if (!sde_encoder_helper_get_skewed_vsync_status
+						(phys_enc->parent))
+			goto end;
 
 	/* protect against negative */
 	if (!enable && refcount == 0) {
@@ -1065,6 +1108,7 @@ static void sde_encoder_phys_vid_disable(struct sde_encoder_phys *phys_enc)
 	struct sde_encoder_phys_vid *vid_enc;
 	unsigned long lock_flags;
 	struct intf_status intf_status = {0};
+	bool vsync_skew_en = false;
 
 	if (!phys_enc || !phys_enc->parent || !phys_enc->parent->dev ||
 			!phys_enc->parent->dev->dev_private) {
@@ -1082,10 +1126,16 @@ static void sde_encoder_phys_vid_disable(struct sde_encoder_phys *phys_enc)
 
 	SDE_DEBUG_VIDENC(vid_enc, "\n");
 
+	vsync_skew_en = sde_encoder_helper_get_skewed_vsync_status
+						(phys_enc->parent);
+
 	if (WARN_ON(!phys_enc->hw_intf->ops.enable_timing))
 		return;
-	else if (!sde_encoder_phys_vid_is_master(phys_enc))
+	else if (!sde_encoder_phys_vid_is_master(phys_enc)) {
+		if (vsync_skew_en)
+			sde_encoder_helper_phys_disable(phys_enc, NULL);
 		goto exit;
+	}
 
 	if (phys_enc->enable_state == SDE_ENC_DISABLED) {
 		SDE_ERROR("already disabled\n");

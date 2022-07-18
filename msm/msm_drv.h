@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -193,6 +193,7 @@ enum msm_mdp_conn_property {
 	CONNECTOR_PROP_ROI_V1,
 	CONNECTOR_PROP_BL_SCALE,
 	CONNECTOR_PROP_SV_BL_SCALE,
+	CONNECTOR_PROP_SKEW_VSYNC,
 	CONNECTOR_PROP_SUPPORTED_COLORSPACES,
 
 	/* enum/bitmask properties */
@@ -504,6 +505,16 @@ struct msm_resource_caps_info {
 };
 
 /**
+ * Select master between intf1 and intf2 for skewed vsync feature.
+ * @INTF_1_MASTER: Select intf1 as master
+ * @INTF_2_MASTER: Select intf2 as master
+ */
+enum {
+	INTF_1_IS_MASTER = 0x1,
+	INTF_2_IS_MASTER
+};
+
+/**
  * struct msm_display_info - defines display properties
  * @intf_type:          DRM_MODE_CONNECTOR_ display type
  * @capabilities:       Bitmask of display flags
@@ -528,6 +539,8 @@ struct msm_resource_caps_info {
  *			for dsi display)
  * @lm_count:		max layer mixer blocks used by display (only available
  *			for dsi display)
+ * @skewed_vsync_master	Specifies the master interface for skewed vsync.
+ *			If this is not set, the feature is disabled.
  */
 struct msm_display_info {
 	int intf_type;
@@ -554,6 +567,7 @@ struct msm_display_info {
 
 	uint32_t dsc_count;
 	uint32_t lm_count;
+	u8 skewed_vsync_master;
 };
 
 #define MSM_MAX_ROI	4

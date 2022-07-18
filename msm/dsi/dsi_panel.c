@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2019, 2021, The Linux Foundation. All rights reserved.
  */
 
@@ -636,10 +637,11 @@ static int dsi_panel_dcs_set_display_brightness_c2(struct mipi_dsi_device *dsi,
 	u16 brightness = (u16)bl_lvl;
 	u8 first_byte = brightness & 0xff;
 	u8 second_byte = brightness >> 8;
-	u8 payload[8] = {second_byte, first_byte,
+	u8 payload[11] = {second_byte, first_byte,
 		second_byte, first_byte,
 		second_byte, first_byte,
-		second_byte, first_byte};
+		second_byte, first_byte,
+		02, 00, 00};
 
 	return mipi_dsi_dcs_write(dsi, 0xC2, payload, sizeof(payload));
 }
@@ -1356,6 +1358,31 @@ static int dsi_panel_parse_qsync_caps(struct dsi_panel *panel,
 			panel->name, rc);
 
 	panel->qsync_min_fps = val;
+
+	return rc;
+}
+
+static int dsi_panel_parse_skewed_vsync(struct dsi_panel *panel)
+{
+	int rc = 0;
+	const char *string;
+	struct dsi_parser_utils *utils = &panel->utils;
+
+	rc = utils->read_string(utils->data,
+			"qcom,mdss-dsi-skewed-vsync-master", &string);
+	if (rc) {
+		DSI_DEBUG("[%s] Skewed Vsync not enabled. rc:%d\n",
+			panel->name, rc);
+		return rc;
+	}
+
+	if (!strcmp(string, "intf1"))
+		panel->skewed_vsync_master = INTF_1_IS_MASTER;
+	else if (!strcmp(string, "intf2"))
+		panel->skewed_vsync_master = INTF_2_IS_MASTER;
+	else
+		DSI_ERR("[%s] Unknown skewed-vsync settings.\n",
+						panel->name);
 
 	return rc;
 }
@@ -3373,6 +3400,10 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	rc = dsi_panel_parse_power_cfg(panel);
 	if (rc)
 		DSI_ERR("failed to parse power config, rc=%d\n", rc);
+
+	rc = dsi_panel_parse_skewed_vsync(panel);
+	if (rc)
+		DSI_DEBUG("failed to parse skewed-vsync settings, rc=%d\n", rc);
 
 	rc = dsi_panel_parse_bl_config(panel);
 	if (rc) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -46,6 +46,8 @@ static const struct drm_prop_enum_list e_topology_name[] = {
 	{SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE,	"sde_quadpipemerge"},
 	{SDE_RM_TOPOLOGY_QUADPIPE_3DMERGE_DSC,	"sde_quadpipe_3dmerge_dsc"},
 	{SDE_RM_TOPOLOGY_QUADPIPE_DSCMERGE,	"sde_quadpipe_dscmerge"},
+	{SDE_RM_TOPOLOGY_QUADPIPE_DSCMERGE_DUALCTL,
+				"sde_quadpipe_dscmerge_dualctl"},
 	{SDE_RM_TOPOLOGY_QUADPIPE_DSC4HSMERGE,	"sde_quadpipe_dsc4hsmerge"},
 };
 static const struct drm_prop_enum_list e_topology_control[] = {
@@ -2525,6 +2527,10 @@ static int _sde_connector_install_properties(struct drm_device *dev,
 	msm_property_install_range(&c_conn->property_info, "autorefresh",
 			0x0, 0, AUTOREFRESH_MAX_FRAME_CNT, 0,
 			CONNECTOR_PROP_AUTOREFRESH);
+
+	msm_property_install_range(&c_conn->property_info, "skew_vsync",
+			0x0, 0, MAX_SKEW_VSYNC_PERCENTAGE, 50,
+			CONNECTOR_PROP_SKEW_VSYNC);
 
 	if (connector_type == DRM_MODE_CONNECTOR_DSI) {
 		if (sde_kms->catalog->has_qsync && display_info->qsync_min_fps)

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -183,6 +183,7 @@ enum sde_intr_enum {
  * @SDE_MDP_UBWC_1_5,      Universal Bandwidth compression version 1.5
  * @SDE_MDP_VSYNC_SEL      Vsync selection for command mode panels
  * @SDE_MDP_DHDR_MEMPOOL   Dynamic HDR Metadata mempool present
+ * @SDE_MDP_SKEWED_VSYNC_SUPPORT Chipset supports interface offset feature
  * @SDE_MDP_MAX            Maximum value
 
  */
@@ -194,6 +195,7 @@ enum {
 	SDE_MDP_UBWC_1_5,
 	SDE_MDP_VSYNC_SEL,
 	SDE_MDP_DHDR_MEMPOOL,
+	SDE_MDP_SKEWED_VSYNC_SUPPORT,
 	SDE_MDP_MAX
 };
 
@@ -405,11 +407,13 @@ enum {
  * @SDE_INTF_INPUT_CTRL         Supports the setting of pp block from which
  *                              pixel data arrives to this INTF
  * @SDE_INTF_TE                 INTF block has TE configuration support
+ * @SDE_INTF_SKEWED_VSYNC       INTF block has skewed_vsync support
  * @SDE_INTF_MAX
  */
 enum {
 	SDE_INTF_INPUT_CTRL = 0x1,
 	SDE_INTF_TE,
+	SDE_INTF_SKEWED_VSYNC,
 	SDE_INTF_MAX
 };
 

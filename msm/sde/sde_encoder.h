@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -37,6 +38,9 @@
 
 #define IDLE_POWERCOLLAPSE_DURATION	(66 - 16/2)
 #define IDLE_POWERCOLLAPSE_IN_EARLY_WAKEUP (200 - 16/2)
+
+#define MIN_SKEW_VSYNC_PERCENTAGE 10
+#define MAX_SKEW_VSYNC_PERCENTAGE 75
 
 /**
  * Encoder functions and data types
@@ -106,7 +110,7 @@ void sde_encoder_get_hw_resources(struct drm_encoder *encoder,
  * @data:	user data provided to callback
  */
 void sde_encoder_register_vblank_callback(struct drm_encoder *encoder,
-		void (*cb)(void *), void *data);
+		void (*cb)(void *), void (*cb2)(void *), void *data);
 
 /**
  * sde_encoder_register_frame_event_callback - provide callback to encoder that
@@ -199,6 +203,14 @@ void sde_encoder_kickoff(struct drm_encoder *encoder, bool is_error);
  */
 int sde_encoder_wait_for_event(struct drm_encoder *drm_encoder,
 						enum msm_event_wait event);
+
+/**
+ * sde_encoder_helper_get_skewed_vsync_status: Returns whether skewed-vsync
+ *			feature is enabled/disabled.
+ * @drm_enc:	encoder pointer
+ * Returns:	true/false if skew-vsync feature is enabled/disabled.
+ */
+bool sde_encoder_helper_get_skewed_vsync_status(struct drm_encoder *drm_enc);
 
 /**
  * sde_encoder_idle_request - request for idle request to avoid 4 vsync cycle
