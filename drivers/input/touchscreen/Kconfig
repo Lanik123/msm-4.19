@@ -1378,4 +1378,12 @@ config TOUCHSCREEN_GOODIX_GT1X
 
 source "drivers/input/touchscreen/gt1511q/Kconfig"
 
+config TOUCHSCREEN_ITK9881H
+	bool "ITK9881H Touchscreen"
+	default n
+	help
+	  Say Y here if you have ITK9881H Touchscreen.
+
+	  If unsure, say N.
+
 endif
