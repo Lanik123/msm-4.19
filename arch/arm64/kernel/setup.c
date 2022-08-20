@@ -64,6 +64,8 @@
 #include <asm/xen/hypervisor.h>
 #include <asm/mmu_context.h>
 
+#include <linux/sdm439_device.h>
+
 static int num_standard_resources;
 static struct resource *standard_resources;
 
@@ -76,6 +78,9 @@ EXPORT_SYMBOL_GPL(boot_reason);
 /* Vendor stub */
 unsigned int cold_boot;
 EXPORT_SYMBOL_GPL(cold_boot);
+
+int sdm439_current_device = DEVICE_UNKNOWN;
+EXPORT_SYMBOL(sdm439_current_device);
 
 /*
  * Standard memory resources
@@ -218,6 +223,16 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 
 	pr_info("Machine model: %s\n", name);
 	dump_stack_set_arch_desc("%s (DT)", name);
+	if (strncmp(name, "Olive", 5) == 0) {
+		sdm439_current_device = XIAOMI_OLIVES;
+		pr_info("Xiaomi Redmi 8 Series");
+	} else if (strncmp(name, "PINE", 4) == 0) {
+		sdm439_current_device = XIAOMI_PINE;
+		pr_info("Xiaomi Redmi 7A");
+	} else {
+		sdm439_current_device = DEVICE_UNKNOWN;
+		pr_info("WARNING: Unknown Device");
+	}
 }
 
 static void __init request_standard_resources(void)
