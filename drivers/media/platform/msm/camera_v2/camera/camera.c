@@ -702,6 +702,8 @@ static int camera_v4l2_open(struct file *filep)
 			if (rc < 0)
 				goto post_fail;
 		}
+		/* Enable power collapse latency */
+		msm_pm_qos_update_request(CAMERA_ENABLE_PC_LATENCY);
 	} else {
 		rc = msm_create_command_ack_q(pvdev->vdev->num,
 			find_first_zero_bit((const unsigned long *)&opn_idx,

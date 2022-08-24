@@ -1442,6 +1442,11 @@ int msm_camera_power_up(struct msm_camera_power_ctrl_t *ctrl,
 	} else {
 		ctrl->cam_pinctrl_status = 1;
 	}
+
+	rc = msm_camera_request_gpio_table(
+		ctrl->gpio_conf->cam_gpio_req_tbl,
+		ctrl->gpio_conf->cam_gpio_req_tbl_size, 0);
+
 	rc = msm_camera_request_gpio_table(
 		ctrl->gpio_conf->cam_gpio_req_tbl,
 		ctrl->gpio_conf->cam_gpio_req_tbl_size, 1);
