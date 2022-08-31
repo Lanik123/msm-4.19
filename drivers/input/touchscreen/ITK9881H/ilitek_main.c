@@ -598,10 +598,10 @@ void ilitek_tddi_report_handler(void)
 	checksum = ilitek_calc_packet_checksum(buf, rlen - 1);
 
 	if (checksum != buf[rlen-1] && idev->fw_uart_en == DISABLE) {
-		ipio_err("Wrong checksum, checksum = %x, buf = %x, len = %d\n", checksum, buf[rlen-1], rlen);
+/*		ipio_err("Wrong checksum, checksum = %x, buf = %x, len = %d\n", checksum, buf[rlen-1], rlen);
 		ipio_debug_level = DEBUG_ALL;
 		ilitek_dump_data(buf, 8, rlen, 0, "finger report with wrong");
-		ipio_debug_level = tmp;
+		ipio_debug_level = tmp; */
 		goto out;
 	}
 

@@ -139,12 +139,12 @@
 
 #define ipio_info(fmt, arg...)						\
 ({									\
-	pr_info("ILITEK:INFO (%s, %d): " fmt, __func__, __LINE__, ##arg);	\
+	no_printk("ILITEK:INFO (%s, %d): " fmt, __func__, __LINE__, ##arg);	\
 })									\
 
 #define ipio_err(fmt, arg...)						\
 ({									\
-	pr_err("ILITEK:ERR (%s, %d): " fmt, __func__, __LINE__, ##arg);	\
+	no_printk("ILITEK:ERR (%s, %d): " fmt, __func__, __LINE__, ##arg);	\
 })									\
 
 extern bool ipio_debug_level;
