@@ -1536,8 +1536,8 @@ static int _sde_crtc_get_ctl_count_for_enc(struct drm_crtc *crtc,
 				sde_encoder_in_clone_mode(enc))
 			continue;
 
-		if (!sde_encoder_is_dsi_display(enc) ||
-				!sde_encoder_check_curr_mode(
+		if (sde_encoder_is_dsi_display(enc) &&
+				sde_encoder_check_curr_mode(
 				enc, MSM_DISPLAY_VIDEO_MODE)) {
 			break;
 		}
