@@ -33,6 +33,7 @@
 /* Poll time to do recovery during active region */
 #define POLL_TIME_USEC_FOR_LN_CNT 500
 #define MAX_POLL_CNT 10
+#define MS_TO_US(t) ((t) * USEC_PER_MSEC)
 
 static bool sde_encoder_phys_vid_is_master(
 		struct sde_encoder_phys *phys_enc)
@@ -1158,6 +1159,23 @@ static void sde_encoder_phys_vid_disable(struct sde_encoder_phys *phys_enc)
 		spin_unlock_irqrestore(phys_enc->enc_spinlock, lock_flags);
 
 		sde_encoder_phys_vid_single_vblank_wait(phys_enc);
+	}
+
+	if (vsync_skew_en) {
+		u32 fps;
+		u64 frame_time_ms;
+
+		fps = sde_encoder_get_fps(phys_enc->parent);
+		frame_time_ms = 1000;
+		do_div(frame_time_ms, fps);
+		SDE_DEBUG("vsync-skew: Wait extra frame_time=%lld. fps=%d\n",
+							frame_time_ms, fps);
+		SDE_EVT32(DRMID(phys_enc->parent), vsync_skew_en,
+			fps, frame_time_ms, ktime_to_ms(ktime_get()));
+		usleep_range(MS_TO_US(frame_time_ms),
+			MS_TO_US(frame_time_ms + 2));
+		SDE_EVT32(DRMID(phys_enc->parent), vsync_skew_en,
+			fps, frame_time_ms, ktime_to_ms(ktime_get()));
 	}
 
 	sde_encoder_helper_phys_disable(phys_enc, NULL);
