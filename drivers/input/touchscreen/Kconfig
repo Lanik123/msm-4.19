@@ -1396,6 +1396,16 @@ config TOUCHSCREEN_NT36525B
 
 source "drivers/input/touchscreen/NT36525B/Kconfig"
 
+config TOUCHSCREEN_FT8006S
+	bool "FT8006S Touchscreen"
+	default n
+	help
+	  Say Y here if you have FT8006S Touchscreen.
+
+	  If unsure, say N.
+
+source "drivers/input/touchscreen/FT8006S/Kconfig"
+
 config VITURALSAR
 	bool "Vitural Sar series"
 	depends on I2C
