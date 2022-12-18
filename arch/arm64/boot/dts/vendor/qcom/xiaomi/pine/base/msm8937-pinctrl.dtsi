@@ -1,0 +1,3 @@
+&tlmm {
+	/delete-node/ spi6;
+};

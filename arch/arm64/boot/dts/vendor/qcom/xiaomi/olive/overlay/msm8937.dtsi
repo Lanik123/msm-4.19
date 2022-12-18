@@ -1,0 +1,12 @@
+&soc {
+	simtray {
+		compatible = "xiaomi,simtray-status";
+		status-gpio = <&tlmm 54 0x00>;
+	};
+	qcom,wdt@b017000 {
+		qcom,bark-time = <11000>;
+	};
+	qcom,wcnss-wlan@0a000000 {
+		qcom,iris-vddrfa-voltage-level = <1350000 0 1350000>;
+	};
+};

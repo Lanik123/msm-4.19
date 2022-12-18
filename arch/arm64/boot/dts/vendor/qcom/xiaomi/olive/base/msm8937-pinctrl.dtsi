@@ -1,0 +1,22 @@
+&tlmm {
+	/delete-node/ i2c_4;
+};
+
+&spi3_cs0_sleep {
+	config {
+		/delete-property/ bias-disable;
+	};
+};
+
+&tlmm {
+	/delete-node/ pmx_quat_mi2s;
+	/delete-node/ pmx_quat_mi2s_din;
+};
+
+&mdss_dsi_suspend {
+	config { /delete-property/ bias-pull-down; };
+};
+
+&tlmm {
+	/delete-node/ cdc-dmic-lines;
+};

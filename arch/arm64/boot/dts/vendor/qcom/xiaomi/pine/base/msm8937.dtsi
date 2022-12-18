@@ -1,0 +1,9 @@
+/ {
+	aliases {
+		/delete-property/ spi6;
+	};
+};
+
+&soc {
+	/delete-node/ spi@7af6000;
+};

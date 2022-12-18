@@ -1,0 +1,2 @@
+#include "msm8937.dtsi"
+#include "msm8937-pinctrl.dtsi"
