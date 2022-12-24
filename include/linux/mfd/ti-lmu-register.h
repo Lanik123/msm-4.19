@@ -254,6 +254,8 @@
 #define LM3697_RAMP_MASK			0x0F
 #define LM3697_RAMP_EACH			0x05
 
+#define LM3697_REG_BOOST_CFG        0x1A
+
 #define LM3697_REG_PWM_CFG			0x1C
 #define LM3697_PWM_A_MASK			BIT(0)
 #define LM3697_PWM_B_MASK			BIT(1)
