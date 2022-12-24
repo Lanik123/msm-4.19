@@ -12,6 +12,9 @@
 #ifdef CONFIG_BACKLIGHT_QCOM_SPMI_WLED
 #include <linux/backlight.h>
 #endif
+#ifdef CONFIG_BACKLIGHT_KTD3137
+#include <linux/mfd/ktd3137.h>
+#endif
 
 #include "mdss_panel.h"
 #include "mdss_dsi_cmd.h"
@@ -93,6 +96,12 @@ enum dsi_panel_bl_ctrl {
 	BL_PWM,
 	BL_WLED,
 	BL_DCS_CMD,
+#ifdef CONFIG_BACKLIGHT_LM3697
+	BL_LM3697,
+#endif
+#ifdef CONFIG_BACKLIGHT_KTD3137
+	BL_KTD3136,
+#endif
 	UNKNOWN_CTRL,
 };
 

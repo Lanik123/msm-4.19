@@ -845,6 +845,13 @@ static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 		mdss_dsi_panel_dsc_pps_send(ctrl_pdata, &pdata->panel_info);
 }
 
+#ifdef CONFIG_BACKLIGHT_LM3697
+extern int lm3697_set_brightness(int brightness);
+#endif
+#ifdef CONFIG_BACKLIGHT_KTD3137
+extern int ktd3137_brightness_set(int brightness);
+#endif
+
 static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 							u32 bl_level)
 {
@@ -911,6 +918,16 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 				mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
 		break;
+#ifdef CONFIG_BACKLIGHT_LM3697
+	case BL_LM3697:
+		lm3697_set_brightness(bl_level);
+		break;
+#endif
+#ifdef CONFIG_BACKLIGHT_KTD3137
+	case BL_KTD3136:
+		ktd3137_brightness_set(bl_level);
+		break;
+#endif
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
 			__func__);
@@ -2404,8 +2421,14 @@ int mdss_panel_parse_bl_settings(struct device_node *np,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	const char *data;
-	int rc = 0;
+	int bkl_id, rc = 0;
 	u32 tmp;
+	extern char *saved_command_line;
+
+	char *bkl_ptr = (char *)strnstr(saved_command_line, ":bklic=", strlen(saved_command_line));
+
+	bkl_ptr += strlen(":bklic=");
+	bkl_id = simple_strtol(bkl_ptr, NULL, 10);
 
 	ctrl_pdata->bklt_ctrl = UNKNOWN_CTRL;
 	data = of_get_property(np, "qcom,mdss-dsi-bl-pmic-control-type", NULL);
@@ -2469,6 +2492,18 @@ int mdss_panel_parse_bl_settings(struct device_node *np,
 
 			pr_debug("%s: Configured DCS_CMD bklt ctrl\n",
 								__func__);
+#ifdef CONFIG_BACKLIGHT_LM3697
+		} else if (!strcmp(data, "bl_mount") && bkl_id == 1) {
+			ctrl_pdata->bklt_ctrl = BL_LM3697;
+			pr_debug("[bkl]%s: Configured LM3697 bklt ctrl\n",
+								__func__);
+#endif
+#ifdef CONFIG_BACKLIGHT_KTD3137
+		} else if (!strcmp(data, "bl_mount") && bkl_id == 24) {
+			ctrl_pdata->bklt_ctrl = BL_KTD3136;
+			pr_debug("[bkl]%s: Configured KTD3136 bklt ctrl\n",
+								__func__);
+#endif
 		}
 	}
 	return 0;
