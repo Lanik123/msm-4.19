@@ -143,7 +143,11 @@ do {                                                    \
 #define HPHL_CROSS_CONN_THRESHOLD 100
 #define HPHR_CROSS_CONN_THRESHOLD 100
 
-#define WCD_MBHC_BTN_PRESS_COMPL_TIMEOUT_MS  50
+//#ifdef AW87519_PA
+#define WCD_MBHC_BTN_PRESS_COMPL_TIMEOUT_MS  250
+//#else
+//#define WCD_MBHC_BTN_PRESS_COMPL_TIMEOUT_MS  50
+//#endif
 #define ANC_DETECT_RETRY_CNT 7
 #define WCD_MBHC_SPL_HS_CNT  1
 

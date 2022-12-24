@@ -175,6 +175,12 @@ static bool wcd_is_special_headset(struct wcd_mbhc *mbhc)
 	bool is_spl_hs = false;
 
 	/*
+	 * We keep the micbias to 2.2V, if we detect an external cable,
+	 * we don't need boost to 2.7V and then check again.
+	*/
+	return true;
+
+	/*
 	 * Increase micbias to 2.7V to detect headsets with
 	 * threshold on microphone
 	 */
@@ -677,6 +683,10 @@ correct_plug_type:
 				}
 			}
 			wrk_complete = false;
+			if ((plug_type == MBHC_PLUG_TYPE_HEADSET) || (plug_type == MBHC_PLUG_TYPE_ANC_HEADPHONE)){
+				pr_debug("%s: get plug_type = %d, exit while \n",  __func__, plug_type);
+				break;
+			}
 		}
 	}
 	if (!wrk_complete && mbhc->btn_press_intr) {
@@ -765,6 +775,7 @@ exit:
 								MIC_BIAS_2);
 	}
 
+	/* for HQ-37596
 	if (mbhc->mbhc_cfg->detect_extn_cable &&
 	    ((plug_type == MBHC_PLUG_TYPE_HEADPHONE) ||
 	     (plug_type == MBHC_PLUG_TYPE_HEADSET)) &&
@@ -773,6 +784,7 @@ exit:
 		wcd_mbhc_hs_elec_irq(mbhc, WCD_MBHC_ELEC_HS_REM, true);
 		WCD_MBHC_RSC_UNLOCK(mbhc);
 	}
+	*/
 	if (mbhc->mbhc_cb->set_cap_mode)
 		mbhc->mbhc_cb->set_cap_mode(component, micbias1, micbias2);
 
