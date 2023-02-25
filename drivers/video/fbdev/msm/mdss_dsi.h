@@ -16,6 +16,13 @@
 #include <linux/mfd/ktd3137.h>
 #endif
 
+#ifdef CONFIG_INPUT_TOUCHSCREEN_XIAOMI_OLIVE
+extern bool  is_ilitek_tp;
+extern void ilitek_call_resume_work(void);
+extern void lcd_call_tp_reset(int i);
+extern bool  is_focal_tp;
+#endif
+
 #include "mdss_panel.h"
 #include "mdss_dsi_cmd.h"
 #include "mdss_dsi_clk.h"

@@ -433,6 +433,23 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 				}
 			}
 
+#ifdef CONFIG_INPUT_TOUCHSCREEN_XIAOMI_OLIVE
+			if (is_focal_tp) {
+				lcd_call_tp_reset(0);
+				gpio_set_value((ctrl_pdata->rst_gpio), pdata->panel_info.rst_seq[0]);
+				if (pdata->panel_info.rst_seq[1])
+					usleep_range((pinfo->rst_seq[1] * 1000), (pinfo->rst_seq[1] * 1000) + 10);
+				gpio_set_value((ctrl_pdata->rst_gpio), pdata->panel_info.rst_seq[2]);
+				if (pdata->panel_info.rst_seq[3])
+					usleep_range((pinfo->rst_seq[3] * 1000 - 5000), (pinfo->rst_seq[3] * 1000) + 10 - 5000);
+				lcd_call_tp_reset(1);
+				usleep_range(5000, 5010);
+				gpio_set_value((ctrl_pdata->rst_gpio), pdata->panel_info.rst_seq[4]);
+				if (pdata->panel_info.rst_seq[5])
+					usleep_range((pinfo->rst_seq[5] * 1000), (pinfo->rst_seq[5] * 1000) + 10);
+			}
+#endif
+
 			for (i = 0; i < pdata->panel_info.rst_seq_len; ++i) {
 				gpio_set_value((ctrl_pdata->rst_gpio),
 					pdata->panel_info.rst_seq[i]);
@@ -440,6 +457,13 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 					usleep_range(pinfo->rst_seq[i] * 1000,
 						pinfo->rst_seq[i] * 1000);
 			}
+
+#ifdef CONFIG_INPUT_TOUCHSCREEN_XIAOMI_OLIVE
+			if (is_ilitek_tp) {
+				ilitek_call_resume_work();
+				mdelay(35);
+			}
+#endif
 
 			if (gpio_is_valid(ctrl_pdata->avdd_en_gpio)) {
 				if (ctrl_pdata->avdd_en_gpio_invert) {
