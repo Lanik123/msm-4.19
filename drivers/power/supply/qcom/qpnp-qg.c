@@ -2225,9 +2225,13 @@ static int qg_psy_get_property(struct power_supply *psy,
 			pval->intval = (int)temp;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		rc = qg_get_nominal_capacity((int *)&temp, 250, true);
-		if (!rc)
-			pval->intval = (int)temp;
+		#ifdef CONFIG_PROJECT_PINE
+		pval->intval = 4000000;
+		#endif
+
+		#ifdef CONFIG_PROJECT_OLIVES
+		pval->intval = 5000000;
+		#endif
 		break;
 	case POWER_SUPPLY_PROP_CYCLE_COUNTS:
 		rc = get_cycle_counts(chip->counter, &pval->strval);

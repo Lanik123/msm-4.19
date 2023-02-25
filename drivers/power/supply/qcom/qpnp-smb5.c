@@ -298,7 +298,7 @@ static const struct clamp_config clamp_levels[] = {
 	{ {0x11C6, 0x11F9, 0x13F1}, {0x60, 0x2B, 0x9C} },
 };
 
-#define PMI632_MAX_ICL_UA	3000000
+#define PMI632_MAX_ICL_UA	2000000
 #define PM6150_MAX_FCC_UA	3000000
 static int smb5_chg_config_init(struct smb5 *chip)
 {
@@ -371,7 +371,7 @@ static int smb5_chg_config_init(struct smb5 *chip)
 		goto out;
 	}
 
-	chg->chg_freq.freq_5V			= 600;
+	chg->chg_freq.freq_5V			= 1050;
 	chg->chg_freq.freq_6V_8V		= 800;
 	chg->chg_freq.freq_9V			= 1050;
 	chg->chg_freq.freq_12V                  = 1200;
@@ -1828,7 +1828,7 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 						POWER_SUPPLY_PROP_TEMP, val);
 		break;
 	case POWER_SUPPLY_PROP_TECHNOLOGY:
-		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
+		val->intval = POWER_SUPPLY_TECHNOLOGY_LIPO;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_DONE:
 		rc = smblib_get_prop_batt_charge_done(chg, val);
@@ -1880,8 +1880,11 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		val->intval = 0;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		rc = smblib_get_prop_from_bms(chg,
-				POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN, val);
+#ifdef CONFIG_PROJECT_PINE
+		val->intval = 4000000;
+#else
+		val->intval = 5000000;
+#endif
 		break;
 	case POWER_SUPPLY_PROP_TIME_TO_FULL_NOW:
 		rc = smblib_get_prop_from_bms(chg,
