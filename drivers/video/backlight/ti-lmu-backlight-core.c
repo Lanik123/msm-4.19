@@ -18,6 +18,7 @@
 #include <linux/kernel.h>
 #include <linux/mfd/ti-lmu.h>
 #include <linux/mfd/ti-lmu-backlight.h>
+#include <linux/mfd/ti-lmu-backlight-data.h>
 #include <linux/mfd/ti-lmu-register.h>
 #include <linux/module.h>
 #include <linux/of.h>

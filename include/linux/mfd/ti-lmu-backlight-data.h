@@ -68,7 +68,7 @@ static int common_ramp_table[] = {
 	   2, 250, 500, 1000, 2000, 4000, 8000, 16000,
 };
 
-struct ti_lmu_bl_cfg lmu_bl_cfg[LMU_MAX_ID] = {
+static struct ti_lmu_bl_cfg lmu_bl_cfg[LMU_MAX_ID] = {
 	{
 		.reginfo		= &lm3697_reg_info,
 		.num_channels		= LM3697_MAX_CHANNELS,
@@ -79,4 +79,3 @@ struct ti_lmu_bl_cfg lmu_bl_cfg[LMU_MAX_ID] = {
 		.fault_monitor_used	= true,
 	},
 };
-EXPORT_SYMBOL_GPL(lmu_bl_cfg);
