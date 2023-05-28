@@ -23,68 +23,6 @@
 
 struct ktd3137_chip *bkl_chip;
 
-#ifdef CONFIG_MACH_XIAOMI_SDM439
-#include <linux/sdm439_device.h>
-#endif
-
-#define KTD_DEBUG
-
- #ifdef KTD_DEBUG
-#define LOG_DBG(fmt, args...) printk(KERN_INFO "[ktd]"fmt"\n", ##args)
-#endif
-
-int ktd3137_brightness_table_reg4[256] = {0x01, 0x02, 0x04, 0x04, 0x07,
-	0x02, 0x00, 0x06, 0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x02,
-	0x06, 0x02, 0x06, 0x02, 0x06, 0x02, 0x06, 0x02, 0x04, 0x05,
-	0x06, 0x05, 0x03, 0x00, 0x05, 0x02, 0x06, 0x02, 0x06, 0x02,
-	0x06, 0x02, 0x06, 0x02, 0x06, 0x02, 0x06, 0x02, 0x06, 0x02,
-	0x06, 0x01, 0x04, 0x07, 0x02, 0x05, 0x00, 0x03, 0x06, 0x01,
-	0x04, 0x07, 0x02, 0x05, 0x00, 0x03, 0x05, 0x07, 0x01, 0x03,
-	0x05, 0x07, 0x01, 0x03, 0x05, 0x07, 0x01, 0x03, 0x05, 0x07,
-	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02,
-	0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x07,
-	0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x07, 0x05, 0x03, 0x01,
-	0x07, 0x05, 0x03, 0x01, 0x07, 0x05, 0x03, 0x01, 0x07, 0x05,
-	0x03, 0x00, 0x05, 0x02, 0x07, 0x04, 0x01, 0x06, 0x03, 0x00,
-	0x05, 0x02, 0x07, 0x04, 0x01, 0x06, 0x03, 0x00, 0x05, 0x02,
-	0x07, 0x03, 0x07, 0x03, 0x07, 0x03, 0x07, 0x03, 0x07, 0x03,
-	0x07, 0x03, 0x07, 0x03, 0x07, 0x03, 0x07, 0x03, 0x07, 0x03,
-	0x07, 0x03, 0x07, 0x03, 0x07, 0x03, 0x07, 0x03, 0x06, 0x01,
-	0x04, 0x07, 0x02, 0x05, 0x00, 0x03, 0x06, 0x01, 0x04, 0x07,
-	0x02, 0x05, 0x00, 0x03, 0x06, 0x01, 0x04, 0x07, 0x02, 0x05,
-	0x07, 0x01, 0x03, 0x05, 0x07, 0x01, 0x03, 0x05, 0x07, 0x01,
-	0x03, 0x05, 0x07, 0x01, 0x03, 0x05, 0x07, 0x01, 0x03, 0x05,
-	0x07, 0x01, 0x03, 0x05, 0x07, 0x01, 0x03, 0x05, 0x07, 0x01,
-	0x03, 0x05, 0x07, 0x01, 0x03, 0x05, 0x07, 0x01, 0x03, 0x05,
-	0x07, 0x01, 0x03, 0x05, 0x07, 0x01, 0x03, 0x04, 0x05, 0x06,
-	0x07};
-int ktd3137_brightness_table_reg5[256] = {0x00, 0x06, 0x0C, 0x11, 0x15,
-	0x1A, 0x1E, 0x21, 0x25, 0x29, 0x2C, 0x2F, 0x32, 0x35, 0x38, 0x3A,
-	0x3D, 0x3F, 0x42, 0x44, 0x47, 0x49, 0x4C, 0x4E, 0x50, 0x52, 0x54,
-	0x56, 0x58, 0x59, 0x5B, 0x5C, 0x5E, 0x5F, 0x61, 0x62, 0x64, 0x65,
-	0x67, 0x68, 0x6A, 0x6B, 0x6D, 0x6E, 0x70, 0x71, 0x73, 0x74, 0x75,
-	0x77, 0x78, 0x7A, 0x7B, 0x7C, 0x7E, 0x7F, 0x80, 0x82, 0x83, 0x85,
-	0x86, 0x87, 0x88, 0x8A, 0x8B, 0x8C, 0x8D, 0x8F, 0x90, 0x91, 0x92,
-	0x94, 0x95, 0x96, 0x97, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F,
-	0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xAA, 0xAB, 0xAC,
-	0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7,
-	0xB8, 0xB9, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, 0xC0, 0xC0,
-	0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC6, 0xC7, 0xC8, 0xC9, 0xC9,
-	0xCA, 0xCB, 0xCC, 0xCC, 0xCD, 0xCE, 0xCF, 0xCF, 0xD0, 0xD1, 0xD2,
-	0xD2, 0xD3, 0xD3, 0xD4, 0xD5, 0xD5, 0xD6, 0xD7, 0xD7, 0xD8, 0xD8,
-	0xD9, 0xDA, 0xDA, 0xDB, 0xDC, 0xDC, 0xDD, 0xDD, 0xDE, 0xDE, 0xDF,
-	0xDF, 0xE0, 0xE0, 0xE1, 0xE1, 0xE2, 0xE2, 0xE3, 0xE3, 0xE4, 0xE4, 0xE5,
-	0xE5, 0xE6, 0xE6, 0xE7, 0xE7, 0xE8, 0xE8, 0xE9, 0xE9, 0xEA, 0xEA, 0xEB,
-	0xEB, 0xEC, 0xEC, 0xEC, 0xED, 0xED, 0xEE, 0xEE, 0xEE, 0xEF, 0xEF, 0xEF,
-	0xF0, 0xF0, 0xF1, 0xF1, 0xF1, 0xF2, 0xF2, 0xF2, 0xF3, 0xF3, 0xF3, 0xF4,
-	0xF4, 0xF4, 0xF4, 0xF5, 0xF5, 0xF5, 0xF5, 0xF6, 0xF6, 0xF6, 0xF6, 0xF7,
-	0xF7, 0xF7, 0xF7, 0xF8, 0xF8, 0xF8, 0xF8, 0xF9, 0xF9, 0xF9, 0xF9, 0xFA,
-	0xFA, 0xFA, 0xFA, 0xFB, 0xFB, 0xFB, 0xFB, 0xFC, 0xFC, 0xFC, 0xFC, 0xFD,
-	0xFD, 0xFD, 0xFD, 0xFE, 0xFE, 0xFE, 0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-	0xFF};
-
 static int ktd3137_write_reg(struct i2c_client *client, int reg, u8 value)
 {
 	int ret;
@@ -133,7 +71,7 @@ static int ktd3137_masked_write(struct i2c_client *client,
 	return rc;
 }
 
-static int ktd_find_bit(int x)
+static int ktd3137_find_bit(int x)
 {
 	int i = 0;
 
@@ -143,7 +81,7 @@ static int ktd_find_bit(int x)
 	return i+1;
 }
 
-static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
+static int ktd3137_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 {
 	struct device_node *np = dev->of_node;
 	struct ktd3137_bl_pdata *pdata = chip->pdata;
@@ -152,16 +90,11 @@ static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 
 	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
 	if (!pdata)
-		return;// -ENOMEM;
+		return -ENOMEM;
 
 	pdata->hwen_gpio = of_get_named_gpio(np, "ktd,hwen-gpio", 0);
-	LOG_DBG("hwen --<%d>\n", pdata->hwen_gpio);
-
 	pdata->pwm_mode = of_property_read_bool(np, "ktd,pwm-mode");
-	LOG_DBG("pwmmode --<%d>\n", pdata->pwm_mode);
-
 	pdata->using_lsb = of_property_read_bool(np, "ktd,using-lsb");
-	LOG_DBG("using_lsb --<%d>\n", pdata->using_lsb);
 
 	if (pdata->using_lsb) {
 		pdata->default_brightness = 0x7ff;
@@ -170,77 +103,65 @@ static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 		pdata->default_brightness = 0xff;
 		pdata->max_brightness = 255;
 	}
+
 	rc = of_property_read_u32(np, "ktd,pwm-frequency", &temp);
-	if (rc) {
-		pr_err("Invalid pwm-frequency!\n");
-	} else {
+	if (!rc) {
 		pdata->pwm_period = temp;
-		LOG_DBG("pwm-frequency --<%d>\n", pdata->pwm_period);
+	} else {
+		pr_err("Invalid pwm-frequency!\n");
 	}
 
 	rc = of_property_read_u32(np, "ktd,bl-fscal-led", &temp);
-	if (rc) {
-		pr_err("Invalid backlight full-scale led current!\n");
-	} else {
+	if (!rc) {
 		pdata->full_scale_led = temp;
-		LOG_DBG("full-scale led current --<%d mA>\n",
-					pdata->full_scale_led);
+	} else {
+		pr_err("Invalid backlight full-scale led current!\n");
 	}
 
 	rc = of_property_read_u32(np, "ktd,turn-on-ramp", &temp);
-	if (rc) {
-		pr_err("Invalid ramp timing ,,turnon!\n");
-	} else {
+	if (!rc) {
 		pdata->ramp_on_time = temp;
-		LOG_DBG("ramp on time --<%d ms>\n", pdata->ramp_on_time);
+	} else {
+		pr_err("Invalid ramp timing ,,turnon!\n");
 	}
 
 	rc = of_property_read_u32(np, "ktd,turn-off-ramp", &temp);
-	if (rc) {
-		pr_err("Invalid ramp timing ,,turnoff!\n");
-	} else {
+	if (!rc) {
 		pdata->ramp_off_time = temp;
-		LOG_DBG("ramp off time --<%d ms>\n", pdata->ramp_off_time);
+	} else {
+		pr_err("Invalid ramp timing ,,turnoff!\n");
 	}
 
 	rc = of_property_read_u32(np, "ktd,pwm-trans-dim", &temp);
-	if (rc) {
-		pr_err("Invalid pwm-tarns-dim value!\n");
-	} else {
+	if (!rc) {
 		pdata->pwm_trans_dim = temp;
-		LOG_DBG("pwm trnasition dimming  --<%d ms>\n",
-					pdata->pwm_trans_dim);
+	} else {
+		pr_err("Invalid pwm-tarns-dim value!\n");
 	}
 
 	rc = of_property_read_u32(np, "ktd,i2c-trans-dim", &temp);
-	if (rc) {
-		pr_err("Invalid i2c-trans-dim value !\n");
-	} else {
+	if (!rc) {
 		pdata->i2c_trans_dim = temp;
-		LOG_DBG("i2c transition dimming --<%d ms>\n",
-					pdata->i2c_trans_dim);
+	} else {
+		pr_err("Invalid i2c-trans-dim value !\n");
 	}
 
 	rc = of_property_read_u32(np, "ktd,bl-channel", &bl_channel);
-	if (rc) {
+	if (!rc) {
 		pr_err("Invalid channel setup\n");
 	} else {
 		pdata->channel = bl_channel;
-		LOG_DBG("bl-channel --<%x>\n", pdata->channel);
 	}
 
 	rc = of_property_read_u32(np, "ktd,ovp-level", &temp);
 	if (!rc) {
 		pdata->ovp_level = temp;
-		LOG_DBG("ovp-level --<%d> --temp <%d>\n",
-					pdata->ovp_level, temp);
 	} else
 		pr_err("Invalid OVP level!\n");
 
 	rc = of_property_read_u32(np, "ktd,switching-frequency", &temp);
 	if (!rc) {
 		pdata->frequency = temp;
-		LOG_DBG("switching frequency --<%d>\n", pdata->frequency);
 	} else {
 		pr_err("Invalid Frequency value!\n");
 	}
@@ -248,15 +169,12 @@ static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 	rc = of_property_read_u32(np, "ktd,inductor-current", &temp);
 	if (!rc) {
 		pdata->induct_current = temp;
-		LOG_DBG("inductor current limit --<%d>\n",
-					pdata->induct_current);
 	} else
 		pr_err("invalid induct_current limit\n");
 
 	rc = of_property_read_u32(np, "ktd,flash-timeout", &temp);
 	if (!rc) {
 		pdata->flash_timeout = temp;
-		LOG_DBG("flash timeout --<%d>\n", pdata->flash_timeout);
 	} else {
 		pr_err("invalid flash-time value!\n");
 	}
@@ -264,7 +182,6 @@ static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 	rc = of_property_read_u32(np, "ktd,linear_ramp", &temp);
 	if (!rc) {
 		pdata->linear_ramp = temp;
-		LOG_DBG("linear_ramp --<%d>\n", pdata->linear_ramp);
 	} else {
 		pr_err("invalid linear_ramp value!\n");
 	}
@@ -272,7 +189,6 @@ static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 	rc = of_property_read_u32(np, "ktd,linear_backlight", &temp);
 	if (!rc) {
 		pdata->linear_backlight = temp;
-		LOG_DBG("linear_backlight --<%d>\n", pdata->linear_backlight);
 	} else {
 		pr_err("invalid linear_backlight value!\n");
 	}
@@ -280,12 +196,12 @@ static void ktd_parse_dt(struct device *dev, struct ktd3137_chip *chip)
 	rc = of_property_read_u32(np, "ktd,flash-current", &temp);
 	if (!rc) {
 		pdata->flash_current = temp;
-		LOG_DBG("flash current --<0x%x>\n", pdata->flash_current);
 	} else {
 		pr_err("invalid flash current value!\n");
 	}
 
 	dev->platform_data = pdata;
+	return 0;
 }
 
 static int ktd3137_bl_enable_channel(struct ktd3137_chip *chip)
@@ -293,15 +209,20 @@ static int ktd3137_bl_enable_channel(struct ktd3137_chip *chip)
 	int ret;
 	struct ktd3137_bl_pdata *pdata = chip->pdata;
 
-	if (pdata->channel == 0) {
-		//default value for mode Register, all channel disabled.
-		LOG_DBG("all channels are going to be disabled\n");
+	switch (pdata->channel) {
+	case 0:
+	case 1:
 		ret = ktd3137_write_reg(chip->client, REG_PWM, 0x18);
-	} else if (pdata->channel == 3) {
-		LOG_DBG("turn all channel on!\n");
-		ret = ktd3137_masked_write(chip->client, REG_PWM, 0x9F, 0x9F);
-	} else if (pdata->channel == 2) {
+		break;
+	case 2:
 		ret = ktd3137_masked_write(chip->client, REG_PWM, 0x9B, 0x1B);
+		break;
+	case 3:
+		ret = ktd3137_masked_write(chip->client, REG_PWM, 0x9F, 0x9F);
+		break;
+	default:
+		ret = -1;
+		break;
 	}
 
 	return ret;
@@ -313,9 +234,7 @@ static void ktd3137_pwm_mode_enable(struct ktd3137_chip *chip, bool en)
 	u8 value;
 
 	if (en) {
-		if (pdata->pwm_mode)
-			LOG_DBG("already activated!\n");
-		else
+		if (!pdata->pwm_mode)
 			pdata->pwm_mode = en;
 		ktd3137_masked_write(chip->client, REG_PWM, 0x80, 0x80);
 	} else {
@@ -325,15 +244,6 @@ static void ktd3137_pwm_mode_enable(struct ktd3137_chip *chip, bool en)
 	}
 
 	ktd3137_read_reg(chip->client, REG_PWM, &value);
-	LOG_DBG("register pwm<0x06> current value is --<%x>\n", value);
-}
-
-static void ktd3137_get_deviceid(struct ktd3137_chip *chip)
-{
-	u8 value;
-
-	ktd3137_read_reg(chip->client, REG_DEV_ID, &value);
-	LOG_DBG("Device ID is --<0x0%x>\n", (value >> 3));
 }
 
 static void ktd3137_ramp_setting(struct ktd3137_chip *chip)
@@ -344,28 +254,21 @@ static void ktd3137_ramp_setting(struct ktd3137_chip *chip)
 
 	if (pdata->ramp_on_time == 0) {//512us
 		ktd3137_masked_write(chip->client, REG_RAMP_ON, 0xf0, 0x00);
-		LOG_DBG("rampon time is 0\n");
 	} else if (pdata->ramp_on_time > max_time) {
 		ktd3137_masked_write(chip->client, REG_RAMP_ON, 0xf0, 0xf0);
-		LOG_DBG("rampon time is max\n");
 	} else {
-		temp = ktd_find_bit(pdata->ramp_on_time);
+		temp = ktd3137_find_bit(pdata->ramp_on_time);
 		ktd3137_masked_write(chip->client, REG_RAMP_ON, 0xf0, temp<<4);
-		LOG_DBG("temp is %d\n", temp);
 	}
 
 	if (pdata->ramp_off_time == 0) {//512us
 		ktd3137_masked_write(chip->client, REG_RAMP_ON, 0x0f, 0x00);
-		LOG_DBG("rampoff time is 0\n");
 	} else if (pdata->ramp_off_time > max_time) {
 		ktd3137_masked_write(chip->client, REG_RAMP_ON, 0x0f, 0x0f);
-		LOG_DBG("rampoff time is max\n");
 	} else {
-		temp = ktd_find_bit(pdata->ramp_off_time);
+		temp = ktd3137_find_bit(pdata->ramp_off_time);
 		ktd3137_masked_write(chip->client, REG_RAMP_ON, 0x0f, temp);
-		LOG_DBG("temp is %d\n", temp);
 	}
-
 }
 
 static void ktd3137_transition_ramp(struct ktd3137_chip *chip)
@@ -380,7 +283,6 @@ static void ktd3137_transition_ramp(struct ktd3137_chip *chip)
 	} else {
 		temp = pdata->i2c_trans_dim/64;
 		reg_i2c = temp-1;
-		LOG_DBG("reg_i2c is --<0x%x>\n", reg_i2c);
 	}
 
 	if (pdata->pwm_trans_dim >= 256) {
@@ -388,23 +290,19 @@ static void ktd3137_transition_ramp(struct ktd3137_chip *chip)
 	} else if (pdata->pwm_trans_dim < 4) {
 		reg_pwm = 0x0;
 	} else {
-		temp = ktd_find_bit(pdata->pwm_trans_dim);
+		temp = ktd3137_find_bit(pdata->pwm_trans_dim);
 		reg_pwm = temp - 2;
-		LOG_DBG("temp is %d\n", temp);
 	}
 
 	ktd3137_masked_write(chip->client, REG_TRANS_RAMP, 0x70, reg_pwm);
 	ktd3137_masked_write(chip->client, REG_TRANS_RAMP, 0x0f, reg_i2c);
-
 }
 
 static void ktd3137_flash_brightness_set(struct led_classdev *cdev,
 					enum led_brightness brightness)
 {
-	struct ktd3137_chip *chip;
+	struct ktd3137_chip *chip = container_of(cdev, struct ktd3137_chip, cdev_flash);
 	u8 reg;
-
-	chip = container_of(cdev, struct ktd3137_chip, cdev_flash);
 
 	cancel_delayed_work_sync(&chip->work);
 	if (!brightness) // flash off
@@ -420,11 +318,8 @@ static void ktd3137_flash_brightness_set(struct led_classdev *cdev,
 		reg = (chip->pdata->flash_timeout/100);
 
 	reg = (reg << 4) | brightness;
-	LOG_DBG("update register value --<0x%x>\n", reg);
 	ktd3137_write_reg(chip->client, REG_FLASH_SETTING, reg);
-
 	ktd3137_masked_write(chip->client, REG_MODE, 0x02, 0x02);
-
 	schedule_delayed_work(&chip->work, chip->pdata->flash_timeout);
 }
 
@@ -452,7 +347,6 @@ static void ktd3137_backlight_init(struct ktd3137_chip *chip)
 	struct ktd3137_bl_pdata *pdata = chip->pdata;
 	u8 value;
 	u8 update_value;
-	ktd3137_get_deviceid(chip);
 	update_value = (pdata->ovp_level == 32) ? 0x20 : 0x00;
 	(pdata->induct_current == 2600) ? update_value |= 0x08 : update_value;
 	(pdata->frequency == 1000) ? update_value |= 0x40 : update_value;
@@ -460,6 +354,10 @@ static void ktd3137_backlight_init(struct ktd3137_chip *chip)
 	(pdata->linear_backlight == 1) ? update_value |= 0x02 : update_value;
 	ktd3137_write_reg(chip->client, REG_CONTROL, update_value);
 	ktd3137_bl_enable_channel(chip);
+
+	if (pdata->linear_backlight == 1) {
+		ktd3137_masked_write(chip->client, REG_CONTROL, 0x02, 0x02);
+	}
 
 	if (pdata->pwm_mode) {
 		ktd3137_pwm_mode_enable(chip, true);
@@ -472,40 +370,6 @@ static void ktd3137_backlight_init(struct ktd3137_chip *chip)
 	ktd3137_read_reg(chip->client, REG_CONTROL, &value);
 	ktd3137_masked_write(chip->client, REG_MODE, 0xf8,
 					pdata->full_scale_led);
-
-	LOG_DBG("read control register -before--<0x%x> -after--<0x%x>\n",
-					update_value, value);
-}
-
-static void ktd3137_hwen_pin_ctrl(struct ktd3137_chip *chip, int en)
-{
-	struct ktd3137_bl_pdata *pdata = chip->pdata;
-
-	if (en) {
-		LOG_DBG("hwen pin is going to be high!---<%d>\n", en);
-		gpio_set_value(pdata->hwen_gpio, true);
-	} else {
-		LOG_DBG("hwen pin is going to be low!---<%d>\n", en);
-		gpio_set_value(pdata->hwen_gpio, false);
-	}
-}
-
-static void ktd3137_check_status(struct ktd3137_chip *chip)
-{
-	u8 value = 0;
-
-	ktd3137_read_reg(chip->client, REG_STATUS, &value);
-	if (value) {
-		LOG_DBG("status bit has been change! <%x>", value);
-
-		if (value & RESET_CONDITION_BITS) {
-			ktd3137_hwen_pin_ctrl(chip, 0);
-			ktd3137_hwen_pin_ctrl(chip, 1);
-			ktd3137_backlight_init(chip);
-		}
-
-	}
-	return ;//value;
 }
 
 static int ktd3137_gpio_init(struct ktd3137_chip *chip)
@@ -525,8 +389,7 @@ static int ktd3137_gpio_init(struct ktd3137_chip *chip)
 			gpio_free(pdata->hwen_gpio);
 			return ret;
 		}
-		LOG_DBG("gpio is valid!\n");
-		ktd3137_hwen_pin_ctrl(chip, 1);
+		gpio_set_value(pdata->hwen_gpio, true);
 	}
 
 	return 0;
@@ -563,7 +426,6 @@ static void ktd3137_pwm_control(struct ktd3137_chip *chip, int brightness)
 void ktd3137_brightness_set_workfunc(struct ktd3137_chip *chip, int brightness)
 {
 	struct ktd3137_bl_pdata *pdata = chip->pdata;
-	u8 value;
 
 	if (brightness == 0) {
 		ktd3137_write_reg(chip->client, 0x07, 0x44);
@@ -573,72 +435,48 @@ void ktd3137_brightness_set_workfunc(struct ktd3137_chip *chip, int brightness)
 		ktd3137_write_reg(chip->client, REG_MODE, 0x99);
 	}
 
-	if (pdata->linear_backlight == 1) {
-		ktd3137_masked_write(chip->client, REG_CONTROL, 0x02, 0x02);// set linear mode
-	}
+	if (brightness > pdata->max_brightness)
+			brightness = pdata->max_brightness;
 
 	if (pdata->pwm_mode) {
-		LOG_DBG("pwm_ctrl is needed\n");
 		ktd3137_pwm_control(chip, brightness);
 	} else {
-		if (brightness > pdata->max_brightness)
-			brightness = pdata->max_brightness;
 		if (pdata->using_lsb) {
 			ktd3137_masked_write(chip->client, REG_RATIO_LSB,
 							0x07, brightness);
 			ktd3137_masked_write(chip->client, REG_RATIO_MSB,
 							0xff, brightness>>3);
 		} else {
-			ktd3137_masked_write(chip->client, REG_RATIO_LSB, 0x07,
-				ktd3137_brightness_table_reg4[brightness]);
-			ktd3137_masked_write(chip->client, REG_RATIO_MSB, 0xff,
-				ktd3137_brightness_table_reg5[brightness]);
+			ktd3137_masked_write(chip->client, REG_RATIO_LSB,
+							0x07, brightness<<3);
+			ktd3137_masked_write(chip->client, REG_RATIO_MSB,
+							0xff, brightness);
 		}
 	}
-
-	ktd3137_read_reg(chip->client, 0x02, &value);
-	ktd3137_read_reg(chip->client, 0x03, &value);
-	ktd3137_read_reg(chip->client, 0x04, &value);
-	ktd3137_read_reg(chip->client, 0x05, &value);
-	ktd3137_read_reg(chip->client, 0x06, &value);
-	ktd3137_read_reg(chip->client, 0x08, &value);
 }
 
-#if defined(CONFIG_MACH_XIAOMI_SDM439) || defined(CONFIG_MACH_XIAOMI_OLIVES)
 #define LOWEST_BRIGHTNESS          8
-#endif
-
 int ktd3137_brightness_set(int brightness)
 {
-	LOG_DBG("%s brightness = %d\n", __func__, brightness);
-    if (sdm439_current_device == XIAOMI_OLIVES) {
-	if ((brightness > 0) && (brightness <= LOWEST_BRIGHTNESS)) {
-		brightness = LOWEST_BRIGHTNESS;
-	};
-	switch (brightness) {
-	case LOWEST_BRIGHTNESS:
-		brightness = brightness - 1;
-		LOG_DBG("%s The lowest brightness = %d\n", __func__, brightness);
-		break;
-	}
-    }
+	if ((brightness > 0) && (brightness <= LOWEST_BRIGHTNESS))
+		brightness = LOWEST_BRIGHTNESS - 1;
+
 	ktd3137_brightness_set_workfunc(bkl_chip, brightness);
 	return brightness;
 }
 
-static int ktd3137_update_brightness(struct backlight_device *bl)
+static int ktd3137_update_status(struct backlight_device *bd)
 {
-	struct ktd3137_chip *chip = bl_get_data(bl);
-	int brightness = bl->props.brightness;
-
-	LOG_DBG("current brightness is --<%d>\n", bl->props.brightness);
+	int brightness = bd->props.brightness;
+	struct ktd3137_chip *chip = bl_get_data(bd);
 
 	cancel_delayed_work_sync(&chip->work);
-
-	if (bl->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
+	if (bd->props.power != FB_BLANK_UNBLANK ||
+	   bd->props.fb_blank != FB_BLANK_UNBLANK ||
+	   bd->props.state & BL_CORE_FBBLANK)
 		brightness = 0;
 
-	if (brightness > 0)
+	if (brightness)
 		ktd3137_masked_write(chip->client, REG_MODE, 0x01, 0x01);
 	else
 		ktd3137_masked_write(chip->client, REG_MODE, 0x01, 0x00);
@@ -651,22 +489,8 @@ static int ktd3137_update_brightness(struct backlight_device *bl)
 
 static const struct backlight_ops ktd3137_backlight_ops = {
 	.options    = BL_CORE_SUSPENDRESUME,
-	.update_status = ktd3137_update_brightness,
+	.update_status = ktd3137_update_status,
 };
-
-static void ktd3137_sync_backlight_work(struct work_struct *work)
-{
-	struct ktd3137_chip *chip;
-	u8 value;
-
-	chip = container_of(work, struct ktd3137_chip, work.work);
-
-	ktd3137_read_reg(chip->client, REG_FLASH_SETTING, &value);
-
-	ktd3137_read_reg(chip->client, REG_MODE, &value);
-
-	ktd3137_check_status(chip);
-}
 
 static struct class *ktd3137_class;
 static atomic_t ktd_dev;
@@ -689,14 +513,27 @@ struct device *ktd3137_device_create(void *drvdata, const char *fmt)
 	return dev;
 }
 
+static void ktd3137_sync_backlight_work(struct work_struct *work)
+{
+	struct ktd3137_chip *chip = container_of(work, struct ktd3137_chip, work.work);
+	u8 value = 0;
+	ktd3137_read_reg(chip->client, REG_STATUS, &value);
+	if (value) {
+		pr_debug("status bit has been change! <%x>", value);
+		if (value & RESET_CONDITION_BITS) {
+			gpio_set_value(chip->pdata->hwen_gpio, false);
+			gpio_set_value(chip->pdata->hwen_gpio, true);
+			ktd3137_backlight_init(chip);
+		}
+	}
+}
+
 static int ktd3137_probe(struct i2c_client *client,
-			const struct i2c_device_id *id) {
-
-	int err = 0;
-	u8 value;
-
+			const struct i2c_device_id *id) 
+{
 	struct ktd3137_bl_pdata *pdata = dev_get_drvdata(&client->dev);
 	struct ktd3137_chip *chip;
+	int ret = 0;
 
 #ifdef CONFIG_MACH_XIAOMI_SDM439
 	extern char *saved_command_line;
@@ -710,22 +547,21 @@ static int ktd3137_probe(struct i2c_client *client,
 #endif
 
 	client->addr = 0x36;
-	LOG_DBG("probe start!\n");
 	if (!pdata) {
-		ktd_parse_dt(&client->dev, chip);
+		ret = ktd3137_parse_dt(&client->dev, chip);
+		if (ret)
+			return ret;
 		pdata = dev_get_platdata(&client->dev);
 	}
+
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		dev_err(&client->dev, "check_functionality failed.\n");
-		err = -ENODEV;
-		goto exit0;
+		return -ENODEV;
 	}
 
 	chip = devm_kzalloc(&client->dev, sizeof(*chip), GFP_KERNEL);
-	if (!chip) {
-		err = -ENOMEM;
-		goto exit0;
-	}
+	if (!chip)
+		return -ENOMEM;
 
 	chip->client = client;
 	chip->pdata = pdata;
@@ -742,16 +578,9 @@ static int ktd3137_probe(struct i2c_client *client,
 	ktd3137_backlight_init(chip);
 	INIT_DELAYED_WORK(&chip->work, ktd3137_sync_backlight_work);
 	ktd3137_flashled_init(client, chip);
-	ktd3137_check_status(chip);
-	ktd3137_read_reg(chip->client, 0x02, &value);
-	ktd3137_read_reg(chip->client, 0x03, &value);
-	ktd3137_read_reg(chip->client, 0x06, &value);
-	ktd3137_read_reg(chip->client, 0x07, &value);
-	ktd3137_read_reg(chip->client, 0x08, &value);
-	ktd3137_read_reg(chip->client, 0x0A, &value);
 	bkl_chip = chip;
-exit0:
-	return err;
+
+	return 0;
 }
 
 static int ktd3137_remove(struct i2c_client *client)
@@ -762,8 +591,7 @@ static int ktd3137_remove(struct i2c_client *client)
 
 	backlight_update_status(chip->bl);
 	cancel_delayed_work_sync(&chip->work);
-
-	ktd3137_hwen_pin_ctrl(chip, 0);
+	gpio_set_value(chip->pdata->hwen_gpio, false);
 	gpio_free(chip->pdata->hwen_gpio);
 
 	return 0;
@@ -773,7 +601,6 @@ static const struct i2c_device_id ktd3137_id[] = {
 	{KTD_I2C_NAME, 0},
 	{ }
 };
-
 
 static const struct of_device_id ktd3137_match_table[] = {
 	{ .compatible = "ktd,ktd3137",},
@@ -802,12 +629,9 @@ static int __init ktd3137_init(void)
 	}
 
 	err = i2c_add_driver(&ktd3137_driver);
-	if (err) {
-		LOG_DBG("ktd3137 driver failed,(errno = %d)\n", err);
-	} else {
-		LOG_DBG("Successfully added driver %s\n",
-			ktd3137_driver.driver.name);
-	}
+	if (err)
+		pr_err("ktd3137 driver failed,(errno = %d)\n", err);
+
 	return err;
 }
 
