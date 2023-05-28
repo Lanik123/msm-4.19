@@ -16,11 +16,6 @@
 		qcom,scm_core_clk_src-freq = <80000000>;
 	};
 
-	msm_bus: qcom,kgsl-busmon {
-		label = "kgsl-busmon";
-		compatible = "qcom,kgsl-busmon";
-	};
-
 	gpu_bw_tbl: gpu-bw-tbl {
 		compatible = "operating-points-v2";
 		opp-0   { opp-hz = /bits/ 64 < 0 >;     }; /* OFF */
