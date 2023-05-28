@@ -13,6 +13,7 @@
 		qcom,dynamic;
 		qcom,use-3-lvl-tables;
 		qcom,enable-smmu-halt;
+		qcom,enable-static-cb;
 		qcom,skip-init;
 		vdd-supply = <&gdsc_oxili_cx>;
 		qcom,regulator-names = "vdd";
@@ -86,4 +87,4 @@
 	};
 };
 
-#include "msm-arm-smmu-impl-defs-8937.dtsi"
+#include "sdm-arm-smmu-impl-defs-439.dtsi"

@@ -380,9 +380,6 @@
 };
 
 &soc {
-	/delete-node/ regulator@b018000;
-	/delete-node/ regulator@01946004;
-
 	mem_acc_vreg_corner: regulator@01946004 {
 		compatible = "qcom,mem-acc-regulator";
 		regulator-name = "mem_acc_corner";

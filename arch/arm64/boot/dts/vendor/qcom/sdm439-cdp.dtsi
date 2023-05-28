@@ -170,7 +170,7 @@
 	status = "ok";
 };
 
-#include "msm8937-mdss-panels.dtsi"
+#include "sdm439-mdss-panels.dtsi"
 
 &mdss_mdp {
 	qcom,mdss-pref-prim-intf = "dsi";

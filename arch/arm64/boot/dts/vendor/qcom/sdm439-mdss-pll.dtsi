@@ -1,23 +1,23 @@
 &soc {
-	mdss_dsi0_pll: qcom,mdss_dsi_pll@1a94a00 {
-		compatible = "qcom,mdss_dsi_pll_28lpm";
+	mdss_dsi0_pll: qcom,mdss_dsi_pll@1a94400 {
+		compatible = "qcom,mdss_dsi_pll_12nm";
 		label = "MDSS DSI 0 PLL";
 		cell-index = <0>;
 		#clock-cells = <1>;
 
-		reg = <0x001a94a00 0xd4>,
+		reg = <0x001a94400 0x400>,
 			<0x0184d074 0x8>;
 		reg-names = "pll_base", "gdsc_base";
 
 		gdsc-supply = <&gdsc_mdss>;
-		vddio-supply = <&pm8937_l6>;
+		vddio-supply = <&pm8953_l6>;
 
 		clocks = <&gcc GCC_MDSS_AHB_CLK>;
 		clock-names = "iface_clk";
 		clock-rate = <0>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";
-		qcom,ssc-frequency-hz = <30000>;
+		qcom,ssc-frequency-hz = <31500>;
 		qcom,ssc-ppm = <5000>;
 
 		qcom,platform-supply-entries {
@@ -44,25 +44,25 @@
 		};
 	};
 
-	mdss_dsi1_pll: qcom,mdss_dsi_pll@1a96a00 {
-		compatible = "qcom,mdss_dsi_pll_28lpm";
+	mdss_dsi1_pll: qcom,mdss_dsi_pll@1a96400 {
+		compatible = "qcom,mdss_dsi_pll_12nm";
 		label = "MDSS DSI 1 PLL";
 		cell-index = <1>;
 		#clock-cells = <1>;
 
-		reg = <0x001a96a00 0xd4>,
+		reg = <0x001a96400 0x400>,
 			<0x0184d074 0x8>;
 		reg-names = "pll_base", "gdsc_base";
 
 		gdsc-supply = <&gdsc_mdss>;
-		vddio-supply = <&pm8937_l6>;
+		vddio-supply = <&pm8953_l6>;
 
 		clocks = <&gcc GCC_MDSS_AHB_CLK>;
 		clock-names = "iface_clk";
 		clock-rate = <0>;
 		qcom,dsi-pll-ssc-en;
 		qcom,dsi-pll-ssc-mode = "down-spread";
-		qcom,ssc-frequency-hz = <30000>;
+		qcom,ssc-frequency-hz = <31500>;
 		qcom,ssc-ppm = <5000>;
 
 		qcom,platform-supply-entries {
