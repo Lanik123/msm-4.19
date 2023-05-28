@@ -11,7 +11,7 @@
 	qcom,csiphy@1b34000 {
 		status = "ok";
 		cell-index = <0>;
-		compatible = "qcom,csiphy-v3.4.2", "qcom,csiphy";
+		compatible = "qcom,csiphy-v10.00", "qcom,csiphy";
 		reg = <0x1b34000 0x1000>,
 			<0x1b00030 0x4>;
 		reg-names = "csiphy", "csiphy_clk_mux";
@@ -22,19 +22,17 @@
 			<&gcc CSI0PHYTIMER_CLK_SRC>,
 			<&gcc GCC_CAMSS_CSI0PHYTIMER_CLK>,
 			<&gcc CAMSS_TOP_AHB_CLK_SRC>,
-			<&gcc GCC_CAMSS_CSI0PHY_CLK>,
 			<&gcc GCC_CAMSS_AHB_CLK>;
 		clock-names = "camss_top_ahb_clk", "ispif_ahb_clk",
 			"csiphy_timer_src_clk", "csiphy_timer_clk",
-			"camss_ahb_src", "csi_phy_clk",
-			"camss_ahb_clk";
-		qcom,clock-rates = <0 61540000 200000000 0 0 0 0>;
+			"camss_ahb_src", "camss_ahb_clk";
+		qcom,clock-rates = <0 61540000 200000000 0 0 0>;
 	};
 
 	qcom,csiphy@1b35000 {
 		status = "ok";
 		cell-index = <1>;
-		compatible = "qcom,csiphy-v3.4.2", "qcom,csiphy";
+		compatible = "qcom,csiphy-v10.00", "qcom,csiphy";
 		reg = <0x1b35000 0x1000>,
 			<0x1b00038 0x4>;
 		reg-names = "csiphy", "csiphy_clk_mux";
@@ -45,88 +43,92 @@
 			<&gcc CSI1PHYTIMER_CLK_SRC>,
 			<&gcc GCC_CAMSS_CSI1PHYTIMER_CLK>,
 			<&gcc CAMSS_TOP_AHB_CLK_SRC>,
-			<&gcc GCC_CAMSS_CSI1PHY_CLK>,
 			<&gcc GCC_CAMSS_AHB_CLK>;
 		clock-names = "camss_top_ahb_clk", "ispif_ahb_clk",
 			"csiphy_timer_src_clk", "csiphy_timer_clk",
-			"camss_ahb_src", "csi_phy_clk",
-			"camss_ahb_clk";
-		qcom,clock-rates = <0 61540000 200000000 0 0 0 0>;
+			"camss_ahb_src", "camss_ahb_clk";
+		qcom,clock-rates = <0 61540000 200000000 0 0 0>;
 	};
 
 	qcom,csid@1b30000  {
 		status = "ok";
 		cell-index = <0>;
-		compatible = "qcom,csid-v3.4.3", "qcom,csid";
+		compatible = "qcom,csid-v3.4.2", "qcom,csid";
 		reg = <0x1b30000 0x400>;
 		reg-names = "csid";
 		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csid";
-		qcom,csi-vdd-voltage = <1200000>;
-		qcom,mipi-csi-vdd-supply = <&pm8937_l2>;
+		qcom,csi-vdd-voltage = <800000>;
+		qcom,mipi-csi-vdd-supply = <&pm8953_l23>;
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
 			<&gcc GCC_CAMSS_CSI0_AHB_CLK>,
 			<&gcc CSI0_CLK_SRC>,
+			<&gcc GCC_CAMSS_CSI0PHY_CLK>,
 			<&gcc GCC_CAMSS_CSI0_CLK>,
 			<&gcc GCC_CAMSS_CSI0PIX_CLK>,
 			<&gcc GCC_CAMSS_CSI0RDI_CLK>,
 			<&gcc GCC_CAMSS_AHB_CLK>;
 		clock-names = "camss_top_ahb_clk",
 			"ispif_ahb_clk", "csi_ahb_clk", "csi_src_clk",
+			"csi0_phy_clk",
 			"csi_clk",  "csi_pix_clk",
 			"csi_rdi_clk", "camss_ahb_clk";
-		qcom,clock-rates = <0 61540000 0 200000000 0 0 0 0>;
+		qcom,clock-rates = <0 61540000 0 200000000 0 0 0 0 0>;
 	};
 
 	qcom,csid@1b30400 {
 		status = "ok";
 		cell-index = <1>;
-		compatible = "qcom,csid-v3.4.3", "qcom,csid";
+		compatible = "qcom,csid-v3.4.2", "qcom,csid";
 		reg = <0x1b30400 0x400>;
 		reg-names = "csid";
 		interrupts = <0 52 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csid";
-		qcom,csi-vdd-voltage = <1200000>;
-		qcom,mipi-csi-vdd-supply = <&pm8937_l2>;
+		qcom,csi-vdd-voltage = <800000>;
+		qcom,mipi-csi-vdd-supply = <&pm8953_l23>;
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
 			<&gcc GCC_CAMSS_CSI1_AHB_CLK>,
 			<&gcc CSI1_CLK_SRC>,
+			<&gcc GCC_CAMSS_CSI1PHY_CLK>,
 			<&gcc GCC_CAMSS_CSI1_CLK>,
 			<&gcc GCC_CAMSS_CSI1PIX_CLK>,
 			<&gcc GCC_CAMSS_CSI1RDI_CLK>,
 			<&gcc GCC_CAMSS_AHB_CLK>;
 		clock-names = "camss_top_ahb_clk",
 			"ispif_ahb_clk", "csi_ahb_clk", "csi_src_clk",
+			"csi1_phy_clk",
 			"csi_clk", "csi_pix_clk",
 			"csi_rdi_clk", "camss_ahb_clk";
-		qcom,clock-rates = <0 61540000 0 200000000 0 0 0 0>;
+		qcom,clock-rates = <0 61540000 0 200000000 0 0 0 0 0>;
 	};
 
 	qcom,csid@1b30800 {
 		status = "ok";
 		cell-index = <2>;
-		compatible = "qcom,csid-v3.4.3", "qcom,csid";
+		compatible = "qcom,csid-v3.4.2", "qcom,csid";
 		reg = <0x1b30800 0x400>;
 		reg-names = "csid";
 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "csid";
-		qcom,csi-vdd-voltage = <1200000>;
-		qcom,mipi-csi-vdd-supply = <&pm8937_l2>;
+		qcom,csi-vdd-voltage = <800000>;
+		qcom,mipi-csi-vdd-supply = <&pm8953_l23>;
 		clocks = <&gcc GCC_CAMSS_TOP_AHB_CLK>,
 			<&gcc GCC_CAMSS_ISPIF_AHB_CLK>,
 			<&gcc GCC_CAMSS_CSI2_AHB_CLK>,
 			<&gcc CSI2_CLK_SRC>,
+			<&gcc GCC_CAMSS_CSI2PHY_CLK>,
 			<&gcc GCC_CAMSS_CSI2_CLK>,
 			<&gcc GCC_CAMSS_CSI2PIX_CLK>,
 			<&gcc GCC_CAMSS_CSI2RDI_CLK>,
 			<&gcc GCC_CAMSS_AHB_CLK>;
 		clock-names = "camss_top_ahb_clk",
 			"ispif_ahb_clk", "csi_ahb_clk", "csi_src_clk",
+			"csi2_phy_clk",
 			"csi_clk", "csi_pix_clk",
 			"csi_rdi_clk", "camss_ahb_clk";
-		qcom,clock-rates = <0 61540000 0 200000000 0 0 0 0>;
+		qcom,clock-rates = <0 61540000 0 200000000 0 0 0 0 0>;
 	};
 
 	qcom,ispif@1b31000 {
@@ -304,6 +306,8 @@
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x400 0x00>,
 				<&apps_iommu 0x2400 0x00>;
+			iommu-cells = <2>;
+			qcom,iommu-dma-addr-pool = <0x10000000 0x70000000>;
 			label = "vfe";
 			qcom,scratch-buf-support;
 		};
@@ -311,12 +315,16 @@
 		msm_cam_smmu_cb3: msm_cam_smmu_cb3 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x1c00 0x00>;
+			iommu-cells = <2>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0x78000000>;
 			label = "cpp";
 		};
 
 		msm_cam_smmu_cb4: msm_cam_smmu_cb4 {
 			compatible = "qcom,msm-cam-smmu-cb";
 			iommus = <&apps_iommu 0x1800 0x00>;
+			iommu-cells = <2>;
+			qcom,iommu-dma-addr-pool = <0x00020000 0x78000000>;
 			label = "jpeg_enc0";
 		};
 	};
@@ -342,13 +350,13 @@
 		qcom,clock-rates = <266670000 0 0 0 0>;
 		qcom,qos-reg-settings = <0x28 0x0000555e>,
 			<0xc8 0x00005555>;
+		qcom,vbif-reg-settings = <0xc0 0x10101000>,
+			<0xb0 0x10100010>;
 		qcom,msm-bus,name = "msm_camera_jpeg0";
 		qcom,msm-bus,num-cases = <2>;
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps = <62 512 0 0>,
 			<62 512 800000 800000>;
-		qcom,vbif-reg-settings = <0xc0 0x10101000>,
-			<0xb0 0x10100010>;
 	};
 
 	qcom,cpp@1b04000 {
@@ -389,6 +397,8 @@
 			<106 512 0 0>;
 		qcom,msm-bus-vector-dyn-vote;
 		qcom,micro-reset;
+		qcom,src-clock-rates = <133333333 160000000 200000000
+			266666667 308570000 320000000 360000000>;
 		qcom,cpp-fw-payload-info {
 			qcom,stripe-base = <156>;
 			qcom,plane-base = <141>;
@@ -448,6 +458,7 @@
 		i2c_freq_1Mhz: qcom,i2c_fast_plus_mode {
 			status = "disabled";
 		};
+
 	};
 };
 

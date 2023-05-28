@@ -64,15 +64,6 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 
-			case_therm {
-				cas_therm_default: cas_therm_default {
-					pins = "mpp4";
-					function = "analog";
-					input-enable;
-					qcom,amux-route = <3>;
-				};
-			};
-
 			pa_therm1 {
 				pa_therm1_default: pa_therm1_default {
 					pins = "mpp2";
@@ -111,7 +102,7 @@
 			#io-channel-cells = <1>;
 			io-channel-ranges;
 			pinctrl-names = "default";
-			pinctrl-0 = <&pa_therm1_default &cas_therm_default>;
+			pinctrl-0 = <&pa_therm1_default>;
 
 			/* Channel nodes */
 			vcoin {
@@ -189,14 +180,6 @@
 			xo_therm_buf {
 				reg = <VADC_LR_MUX3_BUF_XO_THERM>;
 				label = "xo_therm_buf";
-				qcom,ratiometric;
-				qcom,hw-settle-time = <200>;
-				qcom,pre-scaling = <1 1>;
-			};
-
-			case_therm {
-				reg = <VADC_P_MUX4_1_1>;
-				label = "case_therm";
 				qcom,ratiometric;
 				qcom,hw-settle-time = <200>;
 				qcom,pre-scaling = <1 1>;

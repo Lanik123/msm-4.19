@@ -272,7 +272,7 @@
 		wake-capable-sensor;
 		trips {
 			cpu_trip:cpu-trip {
-				temperature = <85000>;
+				temperature = <95000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
@@ -452,7 +452,7 @@
 
 			cx_vdd_cdev {
 				trip = <&aoss0_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -486,7 +486,7 @@
 
 			cx_vdd_cdev {
 				trip = <&mdm_core_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -520,7 +520,7 @@
 
 			cx_vdd_cdev {
 				trip = <&qdsp_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -554,7 +554,7 @@
 
 			cx_vdd_cdev {
 				trip = <&camera_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -588,7 +588,7 @@
 
 			cx_vdd_cdev {
 				trip = <&cpuss1_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -622,7 +622,7 @@
 
 			cx_vdd_cdev {
 				trip = <&cpu0_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -656,7 +656,7 @@
 
 			cx_vdd_cdev {
 				trip = <&cpu1_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -690,7 +690,7 @@
 
 			cx_vdd_cdev {
 				trip = <&cpu2_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -724,7 +724,7 @@
 
 			cx_vdd_cdev {
 				trip = <&cpu3_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -758,7 +758,7 @@
 
 			cx_vdd_cdev {
 				trip = <&cpuss0_lowf_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
@@ -792,12 +792,28 @@
 
 			cx_vdd_cdev {
 				trip = <&gpu_lowf_trip>;
-				cooling-device = <&pm8937_cx_cdev 0 0>;
+				cooling-device = <&pm8953_cx_cdev 0 0>;
 			};
 
 			modem_vdd_cdev {
 				trip = <&gpu_lowf_trip>;
 				cooling-device = <&modem_vdd 0 0>;
+			};
+		};
+	};
+
+	pa-therm0 {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-sensors = <&pm8953_adc_tm VADC_LR_MUX7_HW_ID>;
+		thermal-governor = "user_space";
+		wake-capable-sensor;
+
+		trips {
+			active-config0 {
+				temperature = <65000>;
+				hysteresis = <5000>;
+				type = "passive";
 			};
 		};
 	};

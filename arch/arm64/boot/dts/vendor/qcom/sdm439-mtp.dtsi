@@ -131,7 +131,7 @@
 	};
 };
 
-#include "msm8937-mdss-panels.dtsi"
+#include "sdm439-mdss-panels.dtsi"
 
 &pm8953_gpios {
 	bklt_en {

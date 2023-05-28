@@ -96,7 +96,7 @@
 				    <0x1706c 0x00000000>,
 				    <0x2506c 0x00000000>;
 
-		qcom,vbif-settings = <0x0d0 0x00000010>;
+		qcom,vbif-settings = <0xd0 0x20>;
 
 		qcom,regs-dump-mdp = <0x01000 0x01454>,
 				     <0x02000 0x02064>,
@@ -212,8 +212,8 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		gdsc-supply = <&gdsc_mdss>;
-		vdda-supply = <&pm8937_l2>;
-		vddio-supply = <&pm8937_l6>;
+		vdda-supply = <&pm8953_l23>;
+		vddio-supply = <&pm8953_l6>;
 
 		/* Bus Scale Settings */
 		qcom,msm-bus,name = "mdss_dsi";
@@ -224,21 +224,19 @@
 			<22 512 0 1000>;
 
 		ranges = <0x1a94000 0x1a94000 0x300
-			0x1a94400 0x1a94400 0x280
-			0x1a94b80 0x1a94b80 0x30
+			0x1a94400 0x1a94400 0x400
 			0x193e000 0x193e000 0x30
 			0x1a96000 0x1a96000 0x300
-			0x1a96400 0x1a96400 0x280
-			0x1a96b80 0x1a96b80 0x30
+			0x1a96400 0x1a96400 0x400
 			0x193e000 0x193e000 0x30>;
 
 		clocks = <&gcc_mdss MDSS_MDP_VOTE_CLK>,
 			<&gcc GCC_MDSS_AHB_CLK>,
 			<&gcc GCC_MDSS_AXI_CLK>,
-			<&mdss_dsi0_pll BYTECLK_SRC_0_CLK>,
-			<&mdss_dsi1_pll BYTECLK_SRC_1_CLK>,
-			<&mdss_dsi0_pll PCLK_SRC_0_CLK>,
-			<&mdss_dsi1_pll PCLK_SRC_1_CLK>;
+			<&mdss_dsi0_pll BYTE_CLK_SRC_0_CLK>,
+			<&mdss_dsi1_pll BYTE_CLK_SRC_1_CLK>,
+			<&mdss_dsi0_pll PCLK_SRC_MUX_0_CLK>,
+			<&mdss_dsi1_pll PCLK_SRC_MUX_1_CLK>;
 
 		clock-names = "mdp_core_clk", "iface_clk", "bus_clk",
 			"ext_byte0_clk", "ext_byte1_clk", "ext_pixel0_clk",
@@ -270,8 +268,8 @@
 			qcom,ctrl-supply-entry@0 {
 				reg = <0>;
 				qcom,supply-name = "vdda";
-				qcom,supply-min-voltage = <1200000>;
-				qcom,supply-max-voltage = <1200000>;
+				qcom,supply-min-voltage = <800000>;
+				qcom,supply-max-voltage = <800000>;
 				qcom,supply-enable-load = <100000>;
 				qcom,supply-disable-load = <100>;
 				qcom,supply-post-on-sleep = <20>;
@@ -297,16 +295,14 @@
 			label = "MDSS DSI CTRL->0";
 			cell-index = <0>;
 			reg = <0x1a94000 0x300>,
-				<0x1a94400 0x280>,
-				<0x1a94b80 0x30>,
+				<0x1a94400 0x400>,
 				<0x193e000 0x30>;
-			reg-names = "dsi_ctrl", "dsi_phy",
-			      "dsi_phy_regulator", "mmss_misc_phys";
+			reg-names = "dsi_ctrl", "dsi_phy", "mmss_misc_phys";
 
 			qcom,timing-db-mode;
 			qcom,mdss-mdp = <&mdss_mdp>;
-			vdd-supply = <&pm8937_l17>;
-			vddio-supply = <&pm8937_l6>;
+			vdd-supply = <&pm8953_l17>;
+			vddio-supply = <&pm8953_l6>;
 
 			clocks = <&gcc_mdss GCC_MDSS_BYTE0_CLK>,
 				<&gcc_mdss GCC_MDSS_PCLK0_CLK>,
@@ -315,16 +311,6 @@
 				<&gcc_mdss PCLK0_CLK_SRC>;
 			clock-names = "byte_clk", "pixel_clk", "core_clk",
 				"byte_clk_rcg", "pixel_clk_rcg";
-
-			qcom,platform-strength-ctrl = [ff 06];
-			qcom,platform-bist-ctrl = [00 00 b1 ff 00 00];
-			qcom,platform-regulator-settings = [03 08 07 00
-				20 07 01];
-			qcom,platform-lane-config = [01 c0 00 00 00 00 00 01 97
-				01 c0 00 00 05 00 00 01 97
-				01 c0 00 00 0a 00 00 01 97
-				01 c0 00 00 0f 00 00 01 97
-				00 40 00 00 00 00 00 01 ff];
 		};
 
 		mdss_dsi1: qcom,mdss_dsi_ctrl1@1a96000 {
@@ -332,15 +318,13 @@
 			label = "MDSS DSI CTRL->1";
 			cell-index = <1>;
 			reg = <0x1a96000 0x300>,
-			      <0x1a96400 0x280>,
-			      <0x1a94b80 0x30>,
-			      <0x193e000 0x30>;
-			reg-names = "dsi_ctrl", "dsi_phy",
-			      "dsi_phy_regulator", "mmss_misc_phys";
+				<0x1a96400 0x400>,
+				<0x193e000 0x30>;
+			reg-names = "dsi_ctrl", "dsi_phy", "mmss_misc_phys";
 
 			qcom,mdss-mdp = <&mdss_mdp>;
-			vdd-supply = <&pm8937_l17>;
-			vddio-supply = <&pm8937_l6>;
+			vdd-supply = <&pm8953_l17>;
+			vddio-supply = <&pm8953_l6>;
 
 			clocks = <&gcc_mdss GCC_MDSS_BYTE1_CLK>,
 				<&gcc_mdss GCC_MDSS_PCLK1_CLK>,
@@ -349,17 +333,6 @@
 				<&gcc_mdss PCLK1_CLK_SRC>;
 			clock-names = "byte_clk", "pixel_clk", "core_clk",
 				"byte_clk_rcg", "pixel_clk_rcg";
-
-			qcom,platform-strength-ctrl = [ff 06];
-			qcom,platform-bist-ctrl = [00 00 b1 ff 00 00];
-			qcom,platform-regulator-settings = [03 08 07 00
-				20 07 01];
-			qcom,platform-lane-config = [01 c0 00 00 00 00 00 01 97
-				01 c0 00 00 05 00 00 01 97
-				01 c0 00 00 0a 00 00 01 97
-				01 c0 00 00 0f 00 00 01 97
-				00 40 00 00 00 00 00 01 ff];
-
 		};
 
 	};
