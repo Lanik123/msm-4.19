@@ -255,26 +255,32 @@ static void clk_pll_configure(struct clk_pll *pll, struct regmap *regmap,
 {
 	u32 val;
 	u32 mask;
+	u32 config_val;
 
 	regmap_write(regmap, pll->l_reg, config->l);
 	regmap_write(regmap, pll->m_reg, config->m);
 	regmap_write(regmap, pll->n_reg, config->n);
 
-	val = config->vco_val;
-	val |= config->pre_div_val;
-	val |= config->post_div_val;
-	val |= config->mn_ena_mask;
-	val |= config->main_output_mask;
-	val |= config->aux_output_mask;
+	regmap_read(regmap, pll->config_reg, &config_val);
+	if(config_val) {
+		val = config->vco_val;
+		val |= config->pre_div_val;
+		val |= config->post_div_val;
+		val |= config->mn_ena_mask;
+		val |= config->main_output_mask;
+		val |= config->aux_output_mask;
 
-	mask = config->vco_mask;
-	mask |= config->pre_div_mask;
-	mask |= config->post_div_mask;
-	mask |= config->mn_ena_mask;
-	mask |= config->main_output_mask;
-	mask |= config->aux_output_mask;
+		mask = config->vco_mask;
+		mask |= config->pre_div_mask;
+		mask |= config->post_div_mask;
+		mask |= config->mn_ena_mask;
+		mask |= config->main_output_mask;
+		mask |= config->aux_output_mask;
 
-	regmap_update_bits(regmap, pll->config_reg, mask, val);
+		regmap_update_bits(regmap, pll->config_reg, mask, val);
+	} else {
+		regmap_write(regmap, pll->config_reg, config->config_val);
+	}
 }
 
 void clk_pll_configure_sr(struct clk_pll *pll, struct regmap *regmap,
