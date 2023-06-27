@@ -18,6 +18,7 @@
 
 #include "clk-pll.h"
 #include "clk-debug.h"
+#include "clk-hfpll.h"
 #include "clk-rcg.h"
 #include "clk-regmap-mux-div.h"
 #include "common.h"
@@ -78,24 +79,6 @@ static const char *const apcs_mux_clk_parent_name1[] = {
 	"bi_tcxo_ao",
 	"gpll0_ao_out_main",
 };
-
-static unsigned long
-calc_rate(unsigned long rate, u32 m, u32 n, u32 mode, u32 hid_div)
-{
-	u64 tmp = rate;
-
-	if (hid_div) {
-		tmp *= 2;
-		do_div(tmp, hid_div + 1);
-	}
-
-	if (mode) {
-		tmp *= m;
-		do_div(tmp, n);
-	}
-
-	return tmp;
-}
 
 static int cpucc_clk_set_rate_and_parent(struct clk_hw *hw, unsigned long rate,
 						unsigned long prate, u8 index)
@@ -164,8 +147,7 @@ static int cpucc_clk_determine_rate(struct clk_hw *hw,
 		req->best_parent_rate = apcs_gpll0_rrate;
 		div = DIV_ROUND_CLOSEST(2 * apcs_gpll0_rrate, rate) - 1;
 		div = min_t(unsigned long, div, mask);
-		req->rate = calc_rate(req->best_parent_rate, 0,
-							0, 0, div);
+		req->rate = req->best_parent_rate/(div+1);
 		cpuclk->src = cpuclk->parent_map[P_GPLL0_AO_OUT_MAIN].cfg;
 	} else {
 		parent_req.rate = rate;
@@ -226,7 +208,7 @@ static unsigned long cpucc_clk_recalc_rate(struct clk_hw *hw,
 		if (src == cpuclk->parent_map[i].cfg) {
 			parent = clk_hw_get_parent_by_index(hw, i);
 			parent_rate = clk_hw_get_rate(parent);
-			return calc_rate(parent_rate, 0, 0, 0, div);
+			return parent_rate/(div+1);
 		}
 	}
 	pr_err("%s: Can't find parent %d\n", name, src);
@@ -334,17 +316,20 @@ static const struct clk_ops cpucc_clk_ops = {
 	.list_registers = cpucc_clk_list_registers,
 };
 
-/* Initial configuration for 1305.6MHz */
-static const struct pll_config apcs_cpu_pll_config = {
-	.l = 0x44,
+static const struct pll_freq_tbl pll0_freq[] = {
+	{  768000000, 40, 0x0, 0x1, 0 },
+	{  998400000, 52, 0x0, 0x1, 0 },
+	{ 1171200000, 61, 0x0, 0x1, 0 },
+	{ 1305600000, 68, 0x0, 0x1, 0 },
+	{ 1459200000, 76, 0x0, 0x1, 0 },
+	{ }
+};
+
+static const struct pll_config apcs_cpu_pll0_config = {
+	.l = 0x34,
 	.m = 0,
 	.n = 1,
-	.pre_div_val = 0x0,
-	.pre_div_mask = 0x7 << 12,
-	.post_div_val = 0x0,
-	.post_div_mask = 0x3 << 8,
-	.main_output_mask = BIT(0),
-	.aux_output_mask = BIT(1),
+	.config_val = 0x0100000f,
 };
 
 static struct clk_pll apcs_cpu_pll0 = {
@@ -355,17 +340,12 @@ static struct clk_pll apcs_cpu_pll0 = {
 	.config_reg = 0x10,
 	.status_reg = 0x1c,
 	.status_bit = 16,
+	.freq_tbl = pll0_freq,
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "apcs_cpu_pll0",
 		.parent_names = (const char *[]){ "bi_tcxo_ao" },
 		.num_parents = 1,
-		.ops = &clk_pll_hf_ops,
-		.vdd_class = &vdd_sr2_pll,
-		.rate_max = (unsigned long[VDD_HF_PLL_NUM]) {
-			[VDD_HF_PLL_SVS] = 1000000000,
-			[VDD_HF_PLL_NOM] = 1900000000,
-		},
-		.num_rate_max = VDD_HF_PLL_NUM,
+		.ops = &clk_pll_sr2_ops,
 	},
 };
 
@@ -389,26 +369,29 @@ static struct clk_regmap_mux_div apcs_mux_c0_clk = {
 	},
 };
 
-static struct clk_pll apcs_cpu_pll1 = {
+static struct hfpll_data apcs_cpu_pll1_data = {
 	.mode_reg = 0x0,
 	.l_reg = 0x4,
 	.m_reg = 0x8,
 	.n_reg = 0xc,
 	.config_reg = 0x10,
 	.status_reg = 0x1c,
-	.status_bit = 16,
+	.lock_bit = 16,
+	.config_val = 0xf,
+	.min_rate = 960000000UL,
+	.max_rate = 2016000000UL,
+};
+
+static struct clk_hfpll apcs_cpu_pll1 = {
+	.d = &apcs_cpu_pll1_data,
 	.clkr.hw.init = &(struct clk_init_data){
-		.name = "apcs_cpu_pll1",
 		.parent_names = (const char *[]){ "bi_tcxo_ao" },
 		.num_parents = 1,
-		.ops = &clk_pll_hf_ops,
-		.vdd_class = &vdd_hf_pll,
-		.rate_max = (unsigned long[VDD_HF_PLL_NUM]) {
-			[VDD_HF_PLL_SVS] = 1000000000,
-			[VDD_HF_PLL_NOM] = 2020000000,
-		},
-		.num_rate_max = VDD_HF_PLL_NUM,
+		.name = "apcs_cpu_pll1",
+		.ops = &clk_ops_hfpll,
+		.flags = CLK_IGNORE_UNUSED,
 	},
+	.lock = __SPIN_LOCK_UNLOCKED(apcs_cpu_pll1.lock),
 };
 
 static struct clk_regmap_mux_div apcs_mux_c1_clk = {
@@ -906,6 +889,8 @@ static int cpucc_driver_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "Couldn't get regmap for apcs_cpu_pll0\n");
 			return PTR_ERR(apcs_cpu_pll0.clkr.regmap);
 		}
+
+		clk_pll_configure_sr(&apcs_cpu_pll0, apcs_cpu_pll0.clkr.regmap, &apcs_cpu_pll0_config, false);
 	}
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "apcs_pll1");
@@ -1189,128 +1174,6 @@ static void __exit cpu_clk_exit(void)
 	platform_driver_unregister(&cpu_clk_driver);
 }
 module_exit(cpu_clk_exit);
-
-#define REG_OFFSET	0x4
-#define APCS_PLL0	0x0b116000
-#define APCS_PLL1	0x0b016000
-#define A53SS_MUX_C0	0x0b111050
-#define A53SS_MUX_C1	0x0b011050
-
-static void config_enable_sr2_pll(void __iomem *base)
-{
-	/* Configure L/M/N values */
-	writel_relaxed(0x34, base + apcs_cpu_pll0.l_reg);
-	writel_relaxed(0x0, base + apcs_cpu_pll0.m_reg);
-	writel_relaxed(0x1, base + apcs_cpu_pll0.n_reg);
-
-	/* Configure USER_CTL value */
-	writel_relaxed(0xf, base + apcs_cpu_pll0.config_reg);
-
-	/* Enable the pll */
-	writel_relaxed(0x2, base + apcs_cpu_pll0.mode_reg);
-	udelay(2);
-	writel_relaxed(0x6, base + apcs_cpu_pll0.mode_reg);
-	udelay(50);
-	writel_relaxed(0x7, base + apcs_cpu_pll0.mode_reg);
-	/* Ensure that the writes go through before enabling PLL */
-	mb();
-}
-
-static void config_enable_hf_pll(void __iomem *base)
-{
-	/* Configure USER_CTL value */
-	writel_relaxed(0xf, base + apcs_cpu_pll1.config_reg);
-
-	/* Enable the pll */
-	writel_relaxed(0x2, base + apcs_cpu_pll1.mode_reg);
-	udelay(2);
-	writel_relaxed(0x6, base + apcs_cpu_pll1.mode_reg);
-	udelay(50);
-	writel_relaxed(0x7, base + apcs_cpu_pll1.mode_reg);
-	/* Ensure that the writes go through before enabling PLL */
-	mb();
-}
-
-static int __init cpu_clock_init(void)
-{
-	struct device_node *dev;
-	void __iomem  *base;
-	int count, regval = 0;
-	bool is_sdm439 = false;
-	unsigned long enable_mask = GENMASK(2, 0);
-	dev = of_find_compatible_node(NULL, NULL, "qcom,cpu-clock-sdm439");
-
-	if (dev)
-		is_sdm439 = true;
-
-	if (!dev)
-		dev = of_find_compatible_node(NULL, NULL,
-				"qcom,cpu-clock-sdm429");
-
-	if (!dev)
-		dev = of_find_compatible_node(NULL, NULL,
-				"qcom,cpu-clock-qm215");
-	if (!dev) {
-		pr_err("device node not initialized\n");
-		return -ENOMEM;
-	}
-
-	if (is_sdm439) {
-		base = ioremap_nocache(APCS_PLL0, SZ_64);
-		if (!base)
-			return -ENOMEM;
-
-		regval = readl_relaxed(base);
-		if (!((regval & enable_mask) == enable_mask))
-			config_enable_sr2_pll(base);
-
-		iounmap(base);
-	}
-
-	base = ioremap_nocache(APCS_PLL1, SZ_64);
-	if (!base)
-		return -ENOMEM;
-
-	regval = readl_relaxed(base);
-	if (!((regval & enable_mask) == enable_mask))
-		config_enable_hf_pll(base);
-
-	iounmap(base);
-
-	base = ioremap_nocache(A53SS_MUX_C1, SZ_8);
-	if (!base)
-		return -ENOMEM;
-
-	writel_relaxed(0x501, base + REG_OFFSET);
-
-	/* Update bit */
-	regval = readl_relaxed(base);
-	regval |= BIT(0);
-	writel_relaxed(regval, base);
-
-	/* Wait for update to take effect */
-	for (count = 500; count > 0; count--) {
-		if ((!(readl_relaxed(base))) & BIT(0))
-			break;
-		udelay(1);
-	}
-
-	/* Update bit */
-	regval = readl_relaxed(base);
-	regval |= BIT(0);
-	writel_relaxed(regval, base);
-
-	/* Wait for update to take effect */
-	for (count = 500; count > 0; count--) {
-		if ((!(readl_relaxed(base))) & BIT(0))
-			break;
-		udelay(1);
-	}
-
-	iounmap(base);
-	return 0;
-}
-early_initcall(cpu_clock_init);
 
 MODULE_ALIAS("platform:cpu");
 MODULE_DESCRIPTION("SDM CPU clock Driver");
