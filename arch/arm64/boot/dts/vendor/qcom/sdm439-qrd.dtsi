@@ -1,5 +1,6 @@
-#include "sdm439-mdss-panels.dtsi"
-#include "sdm439-camera-sensor-qrd.dtsi"
+#include "msm8937-mdss-panels.dtsi"
+//#include "sdm439-camera-sensor-qrd.dtsi"
+#include <dt-bindings/clock/qcom,rpmcc.h>
 
 &blsp1_uart2 {
 	status = "ok";
@@ -274,6 +275,7 @@
 	bklight_en-supply = <&pm8953_l5>;
 	vddio-supply = <&pm8953_l6>;
 
+	qcom,dsi-pref-prim-pan = <&dsi_hx8399c_truly_vid>;
 	/delete-property/ qcom,platform-bklight-en-gpio;
 	pinctrl-names = "mdss_default", "mdss_sleep";
 	pinctrl-0 = <&mdss_dsi_active &mdss_te_active>;
@@ -290,11 +292,58 @@
 	status = "ok";
 };
 
+&dsi_hx8399c_truly_vid {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	qcom,mdss-dsi-bl-pmic-pwm-frequency = <100>;
+	qcom,mdss-dsi-bl-pmic-bank-select = <0>;
+	qcom,mdss-dsi-pwm-gpio = <&pm8953_gpios 8 0>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	/delete-property/ qcom,mdss-dsi-panel-timings;
+	qcom,mdss-dsi-panel-timings-phy-12nm = [18 0a 10 06 03 08 06 0e];
+	qcom,mdss-dsi-t-clk-post = <0x02>;
+	qcom,mdss-dsi-t-clk-pre = <0x2d>;
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9d 0x9d 0x9d 0x9d>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9d 0x9d 0x9d 0x9d>;
+	qcom,mdss-dsi-panel-status-read-length = <4>;
+	qcom,mdss-dsi-panel-max-error-count = <3>;
+	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,mdss-dsi-pan-enable-dynamic-fps;
+	qcom,mdss-dsi-pan-fps-update =
+		"dfps_immediate_porch_mode_vfp";
+};
+
+&dsi_hx8399c_hd_vid {
+	/delete-property/ qcom,mdss-dsi-panel-timings;
+	qcom,mdss-dsi-panel-timings-phy-12nm = [09 06 0a 02 00 05 02 08];
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
+	qcom,mdss-dsi-bl-pmic-pwm-frequency = <100>;
+	qcom,mdss-dsi-bl-pmic-bank-select = <0>;
+	qcom,mdss-dsi-pwm-gpio = <&pm8953_gpios 8 0>;
+	qcom,esd-check-enabled;
+	qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9d 0x9d 0x9d 0x9d>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9d 0x9d 0x9d 0x9d>;
+	qcom,mdss-dsi-panel-status-read-length = <4>;
+	qcom,mdss-dsi-panel-max-error-count = <3>;
+	qcom,mdss-dsi-min-refresh-rate = <48>;
+	qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,mdss-dsi-pan-enable-dynamic-fps;
+	qcom,mdss-dsi-pan-fps-update =
+		"dfps_immediate_porch_mode_vfp";
+};
+
 &i2c_2 {
 #address-cells = <1>;
 #size-cells = <0>;
 
-#include "smb1355.dtsi"
 };
 
 &pmi632_gpios {
@@ -338,36 +387,6 @@
 			bias-pull-up;
 			input-enable;
 		};
-	};
-};
-
-&smb1355 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&smb_int_default
-		&smb_en_default &pmi632_sense_default &pmi632_ctm_default>;
-	interrupt-parent = <&tlmm>;
-	interrupts = <61 IRQ_TYPE_LEVEL_LOW>;
-	status = "ok";
-	smb1355_charger: qcom,smb1355-charger@1000 {
-		status = "ok";
-		qcom,parallel-mode = <1>;
-		qcom,disable-ctm;
-		qcom,hw-die-temp-mitigation;
-	};
-};
-
-&smb1355_0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&smb_int_default
-		&smb_en_default &pmi632_sense_default &pmi632_ctm_default>;
-	interrupt-parent = <&tlmm>;
-	interrupts = <61 IRQ_TYPE_LEVEL_LOW>;
-	status = "ok";
-	smb1355_charger_0: qcom,smb1355-charger@1000 {
-		status = "ok";
-		qcom,parallel-mode = <1>;
-		qcom,disable-ctm;
-		qcom,hw-die-temp-mitigation;
 	};
 };
 

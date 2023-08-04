@@ -1,3 +1,18 @@
+&firmware {
+	android {
+		vbmeta { 
+			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+		};
+
+		fstab {
+			vendor {
+				dev = "/dev/block/platform/soc/7824900.sdhci/by-name/vendor";
+				fsmgr_flags = "wait";
+			};
+		};
+	};
+};
+
 &other_ext_mem {
 	reg = <0x0 0x84a00000 0x0 0x1d00000>;
 };

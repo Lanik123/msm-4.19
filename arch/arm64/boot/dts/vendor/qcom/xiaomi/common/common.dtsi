@@ -9,4 +9,3 @@
 #include "sdm439-mtp.dtsi"
 #include "sdm439-pmi632.dtsi"
 #include "sdm439-regulator.dtsi"
-#include "fstab.dtsi"

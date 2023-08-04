@@ -227,6 +227,17 @@
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_mount";
 		qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 		qcom,mdss-dsi-reset-sequence = <1 20>, <0 2>, <1 20>;
+		qcom,esd-check-enabled;
+		qcom,mdss-dsi-panel-status-command = [
+					14 01 00 01 00 00 01 0A
+					14 01 00 01 00 00 01 0D
+					];
+		qcom,mdss-dsi-panel-status-command-mode = "dsi_lp_mode";
+		qcom,mdss-dsi-panel-status-check-mode = "reg_read";
+		qcom,mdss-dsi-panel-status-read-length = <1 1>;
+		qcom,mdss-dsi-panel-status-valid-params = <1>;
+		qcom,mdss-dsi-panel-status-value = <0x9C>,<0x00>;
+		qcom,mdss-dsi-panel-max-error-count = <3>;
 		qcom,mdss-dsi-tx-eot-append;
 		qcom,mdss-pan-physical-width-dimension = <68>;
 		qcom,mdss-pan-physical-height-dimension = <143>;

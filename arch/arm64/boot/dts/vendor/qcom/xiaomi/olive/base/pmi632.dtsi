@@ -1,3 +1,0 @@
-&pmi632_lcdb {
-	/delete-property/ qcom,ttw-enable;
-};
