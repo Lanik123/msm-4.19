@@ -186,6 +186,7 @@ static int ti_lmu_probe(struct i2c_client *cl, const struct i2c_device_id *id)
 	if (bkl_id != 1) {
 		return -ENODEV;
 	}
+	pr_err("[bkl] %s enter\n", __func__);
 #endif
 
 	match = of_match_device(ti_lmu_of_match, dev);

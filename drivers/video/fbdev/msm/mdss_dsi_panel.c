@@ -870,7 +870,7 @@ static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 }
 
 #ifdef CONFIG_BACKLIGHT_LM3697
-extern int lm3697_set_brightness(int brightness);
+int lm3697_set_brightness_blank(int brightness) { return 0; };
 #endif
 #ifdef CONFIG_BACKLIGHT_KTD3137
 extern int ktd3137_brightness_set(int brightness);
@@ -944,7 +944,7 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 		break;
 #ifdef CONFIG_BACKLIGHT_LM3697
 	case BL_LM3697:
-		lm3697_set_brightness(bl_level);
+		lm3697_set_brightness_blank(bl_level);
 		break;
 #endif
 #ifdef CONFIG_BACKLIGHT_KTD3137
