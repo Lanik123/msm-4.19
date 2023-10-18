@@ -319,7 +319,7 @@
 		qcom,node_has_rpm_clock;
 		#clock-cells = <1>;
 		qcom,audio-ref-clk-gpio = <&pm8937_gpios 1 0>;
-		clocks = <&rpmcc RPM_SMD_DIV_CLK2>;
+		clocks = <&clock_gcc clk_div_clk2>;
 		pinctrl-0 = <&cdc_mclk2_sleep>;
 		pinctrl-1 = <&cdc_mclk2_active>;
 	};

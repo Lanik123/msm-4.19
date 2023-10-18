@@ -1,6 +1,6 @@
 #include "msm8937-mdss-panels.dtsi"
 //#include "sdm439-camera-sensor-qrd.dtsi"
-#include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/clock/msm-clocks-8952.h>
 
 &blsp1_uart2 {
 	status = "ok";
@@ -88,7 +88,7 @@
 		pinctrl-0 = <&nfc_int_active &nfc_disable_active
 						&nfc_clk_default>;
 		pinctrl-1 = <&nfc_int_suspend &nfc_disable_suspend>;
-		clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+		clocks = <&clock_gcc clk_bb_clk2_pin>;
 		clock-names = "ref_clk";
 	};
 };

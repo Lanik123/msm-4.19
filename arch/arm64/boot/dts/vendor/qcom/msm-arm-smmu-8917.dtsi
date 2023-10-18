@@ -20,8 +20,8 @@
 				<GIC_SPI 241 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 242 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 243 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&gcc GCC_SMMU_CFG_CLK>,
-				<&gcc GCC_GFX_TCU_CLK>;
+		clocks = <&clock_gcc clk_gcc_smmu_cfg_clk>,
+				<&clock_gcc clk_gcc_gfx_tcu_clk>;
 		clock-names = "iface_clk", "core_clk";
 	};
 
@@ -74,8 +74,8 @@
 				<GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
 				<GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&gcc GCC_SMMU_CFG_CLK>,
-				<&gcc GCC_APSS_TCU_CLK>;
+		clocks = <&clock_gcc clk_gcc_smmu_cfg_clk>,
+				<&clock_gcc clk_gcc_apss_tcu_clk>;
 		clock-names = "iface_clk", "core_clk";
 	};
 };

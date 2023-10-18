@@ -1,4 +1,4 @@
-#include <dt-bindings/clock/qcom,rpmcc.h>
+#include <dt-bindings/clock/msm-clocks-8952.h>
 #include <dt-bindings/iio/qcom,spmi-vadc.h>
 
 &blsp1_uart2 {
@@ -7,7 +7,6 @@
 	pinctrl-0 = <&uart_console_active>;
 };
 
-#include <dt-bindings/clock/qcom,gcc-sdm429w.h>
 #include "qm215-camera-sensor-qrd.dtsi"
 
 &pm8916_chg {
@@ -205,7 +204,7 @@
 		pinctrl-0 = <&nfc_int_active &nfc_disable_active
 						&nfc_clk_default>;
 		pinctrl-1 = <&nfc_int_suspend &nfc_disable_suspend>;
-		clocks = <&rpmcc RPM_SMD_BB_CLK2_PIN>;
+		clocks = <&clock_gcc clk_bb_clk2_pin>;
 		clock-names = "ref_clk";
 	};
 };

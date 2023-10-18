@@ -64,21 +64,21 @@
 	/delete-node/ adv_vreg;
 
 	qcom,gcc@1800000 {
-		/delete-property/ vdd_cx-supply;
+		/delete-property/ vdd_dig-supply;
 		/delete-property/ vdd_sr2_dig-supply;
 		/delete-property/ vdd_sr2_pll-supply;
 		/delete-property/ vdd_hf_dig-supply;
 		/delete-property/ vdd_hf_pll-supply;
-		vdd_cx-supply = <&pm8953_s2_level>;
+		vdd_dig-supply = <&pm8953_s2_level>;
 		vdd_sr2_dig-supply = <&pm8953_s2_level_ao>;
 		vdd_sr2_pll-supply = <&pm8953_l7_ao>;
 		vdd_hf_dig-supply = <&pm8953_s2_level_ao>;
 		vdd_hf_pll-supply = <&pm8953_l7_ao>;
 	};
 
-	qcom,clock-cpu@b111050 {
+	qcom,cpu-clock-8939@b111050 {
 		/delete-property/ vdd-c0-supply;
-		/delete-property/ cpu-vdd-supply;
+		/delete-property/ vdd-c1-supply;
 		/delete-property/ vdd-cci-supply;
 	};
 

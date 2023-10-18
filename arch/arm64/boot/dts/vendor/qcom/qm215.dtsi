@@ -23,8 +23,8 @@
 	};
 };
 
-&gcc {
-	compatible = "qcom,gcc-qm215", "syscon";
+&clock_gcc {
+	compatible = "qcom,gcc-qm215";
 };
 
 &msm_cpufreq {

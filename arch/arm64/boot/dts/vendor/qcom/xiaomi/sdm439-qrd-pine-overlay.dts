@@ -15,8 +15,16 @@
 /dts-v1/;
 /plugin/;
 
-#include "qcom-dts/sdm439-qrd.dtsi"
-#include "pine/overlay-pine.dtsi"
+&soc {
+	dsi_panel_pwr_supply {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+	dsi_pm660_panel_pwr_supply {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
 
 / {
 	model = "PINE QRD";

@@ -39,10 +39,10 @@
 			<55 512 0 0>,
 			<55 512 120000 1200000>,
 			<55 512 393600 3936000>;
-		clocks = <&gcc CRYPTO_CLK_SRC>,
-			<&gcc GCC_CRYPTO_CLK>,
-			<&gcc GCC_CRYPTO_AHB_CLK>,
-			<&gcc GCC_CRYPTO_AXI_CLK>;
+		clocks = <&clock_gcc clk_crypto_clk_src>,
+			<&clock_gcc clk_gcc_crypto_clk>,
+			<&clock_gcc clk_gcc_crypto_ahb_clk>,
+			<&clock_gcc clk_gcc_crypto_axi_clk>;
 		clock-names = "core_clk_src", "core_clk",
 			"iface_clk", "bus_clk";
 		qcom,ce-opp-freq = <100000000>;
