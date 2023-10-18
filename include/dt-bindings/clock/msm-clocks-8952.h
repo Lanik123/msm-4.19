@@ -350,6 +350,7 @@
 #define clk_audio_pmi_clk			0xb7ba2274
 #define clk_audio_ap_clk2			0xf0fbaf5b
 #define clk_audio_lpass_mclk			0x575ec22b
+#define clk_audio_pmi_lnbb_clk   0x57312343
 
 /* GCC block resets */
 #define GCC_CAMSS_MICRO_BCR			0
@@ -357,5 +358,4 @@
 #define GCC_USB_HS_BCR				2
 #define GCC_USB2_HS_PHY_ONLY_BCR		3
 #define GCC_QUSB2_PHY_BCR			4
-
 #endif
