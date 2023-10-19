@@ -148,12 +148,17 @@ config ARCH_QCOM
 	select MFD_CORE
 	select SND_SOC_COMPRESS
 	select SND_HWDEP
+	select CLKDEV_LOOKUP
+	select HAVE_CLK
+	select HAVE_CLK_PREPARE
+	select PM_OPP
 	help
 	  This enables support for the ARMv8 based Qualcomm chipsets.
 
 config ARCH_KONA
 	bool "Enable Support for Qualcomm Technologies, Inc. KONA"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	help
 	  This enables support for the KONA chipset. If you do not
@@ -162,6 +167,7 @@ config ARCH_KONA
 config ARCH_LITO
 	bool "Enable Support for Qualcomm Technologies, Inc. LITO"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	help
 	  This enables support for the LITO chipset. If you do not
@@ -170,6 +176,7 @@ config ARCH_LITO
 config ARCH_LAGOON
 	bool "Enable Support for Qualcomm Technologies, Inc. LAGOON"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	help
 	  This enables support for the LAGOON chipset. If you do not
@@ -178,6 +185,7 @@ config ARCH_LAGOON
 config ARCH_BENGAL
 	bool "Enable Support for Qualcomm Technologies, Inc. BENGAL"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	help
 	  This enables support for the BENGAL chipset. If you do not
@@ -186,6 +194,7 @@ config ARCH_BENGAL
 config ARCH_KHAJE
 	bool "Enable Support for Qualcomm Technologies, Inc. KHAJE"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	help
 	  This enables support for the KHAJE chipset. If you do not
@@ -194,6 +203,7 @@ config ARCH_KHAJE
 config ARCH_SCUBA
 	bool "Enable Support for Qualcomm Technologies, Inc. SCUBA"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	help
 	  This enables support for the SCUBA chipset. If you do not
@@ -203,8 +213,7 @@ config ARCH_QM215
 	bool "Enable Support for Qualcomm Technologies Inc. QM215"
 	depends on ARCH_QCOM
 	select CPU_FREQ_QCOM
-	select COMMON_CLK
-	select COMMON_CLK_QCOM
+	select COMMON_CLK_MSM
 	help
 	  This enables support for the QM215 chipset. If you do not
 	  wish to build a kernel that runs on this chipset, say 'N' here.
@@ -213,8 +222,7 @@ config ARCH_MSM8937
 	bool "Enable Support for Qualcomm Technologies Inc. MSM8937"
 	depends on ARCH_QCOM
 	select CPU_FREQ_QCOM
-	select COMMON_CLK
-	select COMMON_CLK_QCOM
+	select COMMON_CLK_MSM
 	help
 	  This enables support for the MSM8937 chipset. If you do not
 	  wish to build a kernel that runs on this chipset, say 'N' here.
@@ -240,8 +248,7 @@ config ARCH_SDM429
 	bool "Enable Support for Qualcomm Technologies Inc. SDM429"
 	depends on ARCH_QCOM
 	select CPU_FREQ_QCOM
-	select COMMON_CLK
-	select COMMON_CLK_QCOM
+	select COMMON_CLK_MSM
 	help
 	  This enables support for the sdm429 chipset. If you do not
 	  wish to build a kernel that runs on this chipset, say 'N' here.
@@ -250,8 +257,7 @@ config ARCH_SDM439
 	bool "Enable Support for Qualcomm Technologies Inc. SDM439"
 	depends on ARCH_QCOM
 	select CPU_FREQ_QCOM
-	select COMMON_CLK
-	select COMMON_CLK_QCOM
+	select COMMON_CLK_MSM
 	help
 	  This enables support for the sdm439 chipset. If you do not
 	  wish to build a kernel that runs on this chipset, say 'N' here.
@@ -259,6 +265,7 @@ config ARCH_SDM439
 config ARCH_MSM8953
 	bool "Enable Support for Qualcomm Technologies Inc. MSM8953"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	select QCOM_GDSC
 	select CPU_FREQ_QCOM
@@ -269,6 +276,7 @@ config ARCH_MSM8953
 config ARCH_SDM450
 	bool "Enable Support for Qualcomm Technologies Inc. SDM450"
 	depends on ARCH_QCOM
+	select COMMON_CLK
 	select COMMON_CLK_QCOM
 	select QCOM_GDSC
 	select CPU_FREQ_QCOM
